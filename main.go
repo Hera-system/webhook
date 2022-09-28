@@ -14,24 +14,24 @@ import (
 )
 
 type CMD struct {
-	ExecCommand  *string `json:"ExecCommand"`
-	Shebang      *string `json:"Shebang"`
-	TimeExec     *int    `json:"TimeExec"`
-	Token        *string `json:"Token"`
-	Interpreter  *string `json:"Interpreter"`
-	ID           *string `json:"ID"`
-	HTTPUser     *string `json:"HTTPUser"`
-	HTTPPassword *string `json:"HTTPPassword"`
-	HTTPSecret   *string `json:"HTTPSecret"`
+	ExecCommand  string `json:"ExecCommand"`
+	Shebang      string `json:"Shebang"`
+	TimeExec     int    `json:"TimeExec"`
+	Token        string `json:"Token"`
+	Interpreter  string `json:"Interpreter"`
+	ID           string `json:"ID"`
+	HTTPUser     string `json:"HTTPUser"`
+	HTTPPassword string `json:"HTTPPassword"`
+	HTTPSecret   string `json:"HTTPSecret"`
 }
 
 type dataResponse struct {
-	Error   *bool   `json:"Error"`
-	Stdout  *string `json:"Stdout"`
-	Stderr  *string `json:"Stderr"`
-	ID      *string `json:"ID"`
-	Token   *string `json:"Token"`
-	Message *string `json:"Message"`
+	Error   bool   `json:"Error"`
+	Stdout  string `json:"Stdout"`
+	Stderr  string `json:"Stderr"`
+	ID      string `json:"ID"`
+	Token   string `json:"Token"`
+	Message string `json:"Message"`
 }
 
 var (
@@ -44,8 +44,8 @@ var Version string = "v0.0.1"
 var URLServer string = "None"
 
 func init() {
-	file, err := os.OpenFile("/var/log/webhook.executor.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
-	//file, err := os.OpenFile("/tmp/webhook.executor.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	// file, err := os.OpenFile("/var/log/webhook.executor.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	file, err := os.OpenFile("/tmp/webhook.executor.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -65,15 +65,15 @@ func HealtCheak(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-func saveToFile(dataStruct *CMD, fileExecute string) bool {
+func saveToFile(dataStruct CMD, fileExecute string) bool {
 	file, err := os.Create(fileExecute)
 	if err != nil {
 		ErrorLogger.Println("Unable to create file:", err)
 		os.Exit(1)
 		return false
 	}
-	file.WriteString(*dataStruct.Shebang + "\n")
-	file.WriteString(*dataStruct.ExecCommand)
+	file.WriteString(dataStruct.Shebang + "\n")
+	file.WriteString(dataStruct.ExecCommand)
 	file.Close()
 	err = os.Chmod(fileExecute, 0700)
 	if err != nil {
@@ -83,8 +83,10 @@ func saveToFile(dataStruct *CMD, fileExecute string) bool {
 	return true
 }
 
-func sendResult(data string, dataStruct *CMD, Error bool, Stdout string, Stderr string) bool {
-	response := dataResponse{ID: *&dataStruct.ID, Error: &Error, Token: *&dataStruct.Token, Message: &data, Stderr: &Stderr, Stdout: &Stdout}
+func sendResult(data string, dataStruct CMD, Error bool, Stdout string, Stderr string) bool {
+	//response := dataResponse{ID: *&dataStruct.ID, Error: &Error, Token: *&dataStruct.Token, Message: &data, Stderr: &Stderr, Stdout: &Stdout}
+	response := dataResponse{ID: dataStruct.ID, Error: Error, Token: dataStruct.Token, Message: data, Stderr: Stderr, Stdout: Stdout}
+	//response := dataResponse{ID: &dataStruct.ID, Error: &Error, Token: &dataStruct.Token, Message: &data, Stderr: &Stderr, Stdout: &Stdout}
 	json_data, err := json.Marshal(response)
 	if err != nil {
 		ErrorLogger.Println(err)
@@ -124,13 +126,13 @@ func copyAndCapture(w io.Writer, r io.Reader) ([]byte, error) {
 	}
 }
 
-func Native(dataStruct *CMD) string {
+func Native(dataStruct CMD) string {
 	var fileExecute string = "/tmp/webhook.execute"
 	if saveToFile(dataStruct, fileExecute) {
-		var timeExecute = time.Duration(*dataStruct.TimeExec)
+		var timeExecute = time.Duration(dataStruct.TimeExec)
 		var stdout, stderr []byte
 		var errStdout, errStderr error
-		cmd := exec.Command(*dataStruct.Interpreter, fileExecute)
+		cmd := exec.Command(dataStruct.Interpreter, fileExecute)
 		stdoutIn, _ := cmd.StdoutPipe()
 		if err := cmd.Start(); err != nil {
 			ErrorLogger.Println(err)
@@ -155,7 +157,7 @@ func Native(dataStruct *CMD) string {
 		case err := <-done:
 			if err != nil {
 				ErrorLogger.Println("Process finished with error = ", err)
-				ErrorLogger.Println("ID - ", *dataStruct.ID)
+				ErrorLogger.Println("ID - ", dataStruct.ID)
 				sendResult("Error, check args and logs.", dataStruct, true, "", "")
 				return ("Error, check args and logs.")
 			}
@@ -179,11 +181,11 @@ func Native(dataStruct *CMD) string {
 	return "error"
 }
 
-func Validate(dataStruct *CMD) bool {
+func Validate(dataStruct CMD) bool {
 	var Token string = "VeryStrongString"
 	var SecretURL string = "https://raw.githubusercontent.com/Hera-system/TOTP/main/TOTP"
 	var Secret string
-	if *dataStruct.Token != Token {
+	if dataStruct.Token != Token {
 		return false
 	}
 	res, err := http.Get(SecretURL)
@@ -192,7 +194,7 @@ func Validate(dataStruct *CMD) bool {
 		return false
 	}
 	if res.StatusCode == 401 {
-		res.Request.SetBasicAuth(*dataStruct.HTTPUser, *dataStruct.HTTPPassword)
+		res.Request.SetBasicAuth(dataStruct.HTTPUser, dataStruct.HTTPPassword)
 		res, err := http.Get(SecretURL)
 		if err != nil {
 			ErrorLogger.Println("Error making http request: ", err)
@@ -214,7 +216,7 @@ func Validate(dataStruct *CMD) bool {
 		return false
 	}
 	Secret = string(out)
-	if Secret != *dataStruct.HTTPSecret {
+	if Secret != dataStruct.HTTPSecret {
 		ErrorLogger.Println("Error HTTPSecret")
 		return false
 	}
@@ -238,19 +240,19 @@ func ExecuteCommand(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	InfoLogger.Println("From IP - ", r.RemoteAddr)
-	InfoLogger.Println("Shebang - ", *dataStruct.Shebang)
-	InfoLogger.Println("TimeExec - ", *dataStruct.TimeExec)
-	InfoLogger.Println("Interpreter - ", *dataStruct.Interpreter)
-	InfoLogger.Println("ID - ", *dataStruct.ID)
-	InfoLogger.Println("ExecCommand - ", *dataStruct.ExecCommand)
-	if Validate(&dataStruct) == false {
+	InfoLogger.Println("Shebang - ", dataStruct.Shebang)
+	InfoLogger.Println("TimeExec - ", dataStruct.TimeExec)
+	InfoLogger.Println("Interpreter - ", dataStruct.Interpreter)
+	InfoLogger.Println("ID - ", dataStruct.ID)
+	InfoLogger.Println("ExecCommand - ", dataStruct.ExecCommand)
+	if Validate(dataStruct) == false {
 		MsgErr := "INVALID VALIDATE!"
 		w.WriteHeader(http.StatusForbidden)
 		w.Write([]byte(MsgErr))
 		WarningLogger.Println(MsgErr)
 		return
 	}
-	go Native(&dataStruct)
+	go Native(dataStruct)
 	w.Write([]byte("OK"))
 }
 
