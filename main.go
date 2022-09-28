@@ -3,6 +3,8 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"flag"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -39,9 +41,11 @@ var (
 )
 
 var Version string = "v0.0.1"
+var URLServer string = "None"
 
 func init() {
 	file, err := os.OpenFile("/var/log/webhook.executor.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	//file, err := os.OpenFile("/tmp/webhook.executor.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -85,7 +89,7 @@ func sendResult(data string, dataStruct *CMD, Error bool, Stdout string, Stderr 
 	if err != nil {
 		ErrorLogger.Println(err)
 	}
-	resp, err := http.Post(os.Getenv("URL_SERVER"), "application/json", bytes.NewBuffer(json_data))
+	resp, err := http.Post(URLServer, "application/json", bytes.NewBuffer(json_data))
 	if err != nil {
 		ErrorLogger.Println("An Error Occured ", err)
 	}
@@ -251,10 +255,18 @@ func ExecuteCommand(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	PortPtr := flag.Int("Port", 7342, "Webhook port.")
+	URLPtr := flag.String("URL", "None", "URL send result.")
+	flag.Parse()
+	if *URLPtr == "None" {
+		fmt.Println("Args URL not used. Exit.")
+		ErrorLogger.Fatal("Args URL not used. Exit.")
+	}
+	URLServer = *URLPtr
 	mux := http.NewServeMux()
 	mux.HandleFunc("/execute", ExecuteCommand)
 	mux.HandleFunc("/healtcheak", HealtCheak)
-	ServerAddress := ":" + os.Getenv("PORT")
+	ServerAddress := ":" + fmt.Sprint(*PortPtr)
 	InfoLogger.Println("Startup on ", ServerAddress)
 	error := http.ListenAndServe(ServerAddress, mux)
 	ErrorLogger.Println(error)
