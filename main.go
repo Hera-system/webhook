@@ -40,7 +40,7 @@ var (
 	ErrorLogger   *log.Logger
 )
 
-var Version string = "v0.0.4"
+var Version string = "v0.0.5"
 var URLServer string = "None"
 var LogPath string = "/var/log/webhook.executor.log"
 
