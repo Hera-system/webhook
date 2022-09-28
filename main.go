@@ -12,12 +12,15 @@ import (
 )
 
 type CMD struct {
-	ExecCommand *string `json:"ExecCommand"`
-	Shebang     *string `json:"Shebang"`
-	TimeExec    *int    `json:"TimeExec"`
-	Token       *string `json:"Token"`
-	Interpreter *string `json:"Interpreter"`
-	ID          *string `json:"ID"`
+	ExecCommand  *string `json:"ExecCommand"`
+	Shebang      *string `json:"Shebang"`
+	TimeExec     *int    `json:"TimeExec"`
+	Token        *string `json:"Token"`
+	Interpreter  *string `json:"Interpreter"`
+	ID           *string `json:"ID"`
+	HTTPUser     *string `json:"HTTPUser"`
+	HTTPPassword *string `json:"HTTPPassword"`
+	HTTPSecret   *string `json:"HTTPSecret"`
 }
 
 type dataResponse struct {
@@ -35,10 +38,10 @@ var (
 	ErrorLogger   *log.Logger
 )
 
-var TOKEN string = "VeryStrongString"
+var Version string = "v0.0.1"
 
 func init() {
-	file, err := os.OpenFile("/tmp/webhook.executor.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	file, err := os.OpenFile("/var/log/webhook.executor.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -54,7 +57,8 @@ func HealtCheak(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Method not allowed."))
 		return
 	}
-	w.Write([]byte("OK"))
+	w.Write([]byte(Version))
+	return
 }
 
 func saveToFile(dataStruct *CMD, fileExecute string) bool {
@@ -124,7 +128,6 @@ func Native(dataStruct *CMD) string {
 		var errStdout, errStderr error
 		cmd := exec.Command(*dataStruct.Interpreter, fileExecute)
 		stdoutIn, _ := cmd.StdoutPipe()
-		//stderrIn, _ := cmd.StderrPipe()
 		if err := cmd.Start(); err != nil {
 			ErrorLogger.Println(err)
 		}
@@ -136,13 +139,15 @@ func Native(dataStruct *CMD) string {
 		select {
 		case <-time.After(timeExecute * time.Second):
 			if err := cmd.Process.Kill(); err != nil {
-				ErrorLogger.Println("failed to kill process: ", err)
-				sendResult("Failed to kill proccess.", dataStruct, true, "", "")
-				return ("Failed to kill proccess.")
+				tmp := "Failed to kill proccess. "
+				ErrorLogger.Println(tmp, err)
+				sendResult(tmp, dataStruct, true, "", "")
+				return (tmp)
 			}
-			WarningLogger.Println("Process killed as timeout reached")
-			sendResult("Process killed as timeout reached.", dataStruct, true, "", "")
-			return ("Process killed as timeout reached")
+			tmp := "Process killed as timeout reached"
+			WarningLogger.Println(tmp)
+			sendResult(tmp, dataStruct, true, "", "")
+			return (tmp)
 		case err := <-done:
 			if err != nil {
 				ErrorLogger.Println("Process finished with error = ", err)
@@ -162,11 +167,54 @@ func Native(dataStruct *CMD) string {
 			return "Failed to capture stdout or stderr."
 		}
 		outStr, errStr := string(stdout), string(stderr)
-		InfoLogger.Println("\nout:\n%s\nerr:\n%s\n", outStr, errStr)
+		InfoLogger.Println("Stdout: ", outStr)
+		InfoLogger.Println("Stderr: ", errStr)
 		sendResult("OK", dataStruct, false, outStr, errStr)
 		return "output"
 	}
 	return "error"
+}
+
+func Validate(dataStruct *CMD) bool {
+	var Token string = "VeryStrongString"
+	var SecretURL string = "https://raw.githubusercontent.com/Hera-system/TOTP/main/TOTP"
+	var Secret string
+	if *dataStruct.Token != Token {
+		return false
+	}
+	res, err := http.Get(SecretURL)
+	if err != nil {
+		ErrorLogger.Println("Error making http request: ", err)
+		return false
+	}
+	if res.StatusCode == 401 {
+		res.Request.SetBasicAuth(*dataStruct.HTTPUser, *dataStruct.HTTPPassword)
+		res, err := http.Get(SecretURL)
+		if err != nil {
+			ErrorLogger.Println("Error making http request: ", err)
+			return false
+		}
+		out, err := io.ReadAll(res.Body)
+		if err != nil {
+			return false
+		}
+		Secret = string(out)
+	}
+	if res.StatusCode != 200 {
+		ErrorLogger.Println("Resonse code is not 200: ", res.StatusCode)
+		return false
+	}
+	out, err := io.ReadAll(res.Body)
+	if err != nil {
+		ErrorLogger.Println("Error read body: ", err)
+		return false
+	}
+	Secret = string(out)
+	if Secret != *dataStruct.HTTPSecret {
+		ErrorLogger.Println("Error HTTPSecret")
+		return false
+	}
+	return true
 }
 
 func ExecuteCommand(w http.ResponseWriter, r *http.Request) {
@@ -191,8 +239,8 @@ func ExecuteCommand(w http.ResponseWriter, r *http.Request) {
 	InfoLogger.Println("Interpreter - ", *dataStruct.Interpreter)
 	InfoLogger.Println("ID - ", *dataStruct.ID)
 	InfoLogger.Println("ExecCommand - ", *dataStruct.ExecCommand)
-	if *dataStruct.Token != TOKEN {
-		MsgErr := "INVALID TOKEN!"
+	if Validate(&dataStruct) == false {
+		MsgErr := "INVALID VALIDATE!"
 		w.WriteHeader(http.StatusForbidden)
 		w.Write([]byte(MsgErr))
 		WarningLogger.Println(MsgErr)
@@ -207,7 +255,7 @@ func main() {
 	mux.HandleFunc("/execute", ExecuteCommand)
 	mux.HandleFunc("/healtcheak", HealtCheak)
 	ServerAddress := ":" + os.Getenv("PORT")
-	error := http.ListenAndServe(ServerAddress, mux)
 	InfoLogger.Println("Startup on ", ServerAddress)
+	error := http.ListenAndServe(ServerAddress, mux)
 	ErrorLogger.Println(error)
 }
