@@ -44,8 +44,8 @@ var Version string = "v0.0.1"
 var URLServer string = "None"
 
 func init() {
-	// file, err := os.OpenFile("/var/log/webhook.executor.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
-	file, err := os.OpenFile("/tmp/webhook.executor.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	file, err := os.OpenFile("/var/log/webhook.executor.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	// file, err := os.OpenFile("/tmp/webhook.executor.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -84,9 +84,7 @@ func saveToFile(dataStruct CMD, fileExecute string) bool {
 }
 
 func sendResult(data string, dataStruct CMD, Error bool, Stdout string, Stderr string) bool {
-	//response := dataResponse{ID: *&dataStruct.ID, Error: &Error, Token: *&dataStruct.Token, Message: &data, Stderr: &Stderr, Stdout: &Stdout}
 	response := dataResponse{ID: dataStruct.ID, Error: Error, Token: dataStruct.Token, Message: data, Stderr: Stderr, Stdout: Stdout}
-	//response := dataResponse{ID: &dataStruct.ID, Error: &Error, Token: &dataStruct.Token, Message: &data, Stderr: &Stderr, Stdout: &Stdout}
 	json_data, err := json.Marshal(response)
 	if err != nil {
 		ErrorLogger.Println(err)
@@ -270,6 +268,7 @@ func main() {
 	mux.HandleFunc("/healtcheak", HealtCheak)
 	ServerAddress := ":" + fmt.Sprint(*PortPtr)
 	InfoLogger.Println("Startup on ", ServerAddress)
+	fmt.Println("Startup on ", ServerAddress)
 	error := http.ListenAndServe(ServerAddress, mux)
 	ErrorLogger.Println(error)
 }
