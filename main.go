@@ -42,10 +42,10 @@ var (
 
 var Version string = "v0.0.1"
 var URLServer string = "None"
+var LogPath string = "/var/log/webhook.executor.log"
 
-func init() {
-	file, err := os.OpenFile("/var/log/webhook.executor.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
-	// file, err := os.OpenFile("/tmp/webhook.executor.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+func LogFunc() {
+	file, err := os.OpenFile(LogPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -257,7 +257,13 @@ func ExecuteCommand(w http.ResponseWriter, r *http.Request) {
 func main() {
 	PortPtr := flag.Int("Port", 7342, "Webhook port.")
 	URLPtr := flag.String("URL", "None", "URL send result.")
+	LogPtr := flag.String("Log", LogPath, "Log path.")
 	flag.Parse()
+	if LogPath == *LogPtr {
+		fmt.Println("Args -Log not use. Used default path: ", LogPath)
+	}
+	LogPath = *LogPtr
+	LogFunc()
 	if *URLPtr == "None" {
 		fmt.Println("Args URL not used. Exit.")
 		ErrorLogger.Fatal("Args URL not used. Exit.")
