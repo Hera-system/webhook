@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"time"
@@ -254,6 +255,11 @@ func ExecuteCommand(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("OK"))
 }
 
+func IsUrl(str string) bool {
+	u, err := url.Parse(str)
+	return err == nil && u.Scheme != "" && u.Host != ""
+}
+
 func main() {
 	PortPtr := flag.Int("Port", 7342, "Webhook port.")
 	URLPtr := flag.String("URL", "None", "URL send result.")
@@ -267,6 +273,11 @@ func main() {
 	if *URLPtr == "None" {
 		fmt.Println("Args URL not used. Exit.")
 		ErrorLogger.Fatal("Args URL not used. Exit.")
+	}
+	fmt.Println(IsUrl(*URLPtr))
+	if IsUrl(*URLPtr) == false {
+		fmt.Println("Error validate URL - ", *URLPtr)
+		ErrorLogger.Fatal("Error validate URL - ", *URLPtr)
 	}
 	URLServer = *URLPtr
 	mux := http.NewServeMux()

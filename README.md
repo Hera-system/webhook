@@ -71,11 +71,11 @@ ExecCommand
 Запуск:
 
 ```
-webhook -Port=9999 -URL=https://google.com
+webhook -Port=9999 -URL=http://hera.system:7777/api/v1/result -Log=/tmp/webhook.log
 ```
 
 RUN:
 
 ```
-go run . -Port=9999 -URL=https://google.com
+go run . -Port=9999 -URL=http://hera.system:7777/api/v1/result -Log=/tmp/webhook.log
 ```
