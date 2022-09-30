@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/Hera-system/webhook/utils"
 	"io"
 	"log"
 	"net/http"
@@ -69,8 +70,9 @@ func HealtCheak(w http.ResponseWriter, r *http.Request) {
 func saveToFile(dataStruct CMD, fileExecute string) bool {
 	file, err := os.Create(fileExecute)
 	if err != nil {
-		ErrorLogger.Println("Unable to create file:", err)
-		os.Exit(1)
+		tmp := "Unable to create exetuable file. Path: " + fileExecute + ". Shutdown webhook..."
+		sendResult(tmp, dataStruct, true, "", "")
+		ErrorLogger.Fatalln(tmp, err)
 		return false
 	}
 	file.WriteString(dataStruct.Shebang + "\n")
@@ -84,21 +86,32 @@ func saveToFile(dataStruct CMD, fileExecute string) bool {
 	return true
 }
 
+func IsExistsURL(URL string) bool {
+	_, err := http.Head(URL)
+	if err != nil {
+		ErrorLogger.Println("URL is not exist. URL: ", URL)
+		return false
+	}
+	return true
+}
+
 func sendResult(data string, dataStruct CMD, Error bool, Stdout string, Stderr string) bool {
 	response := dataResponse{ID: dataStruct.ID, Error: Error, Token: dataStruct.Token, Message: data, Stderr: Stderr, Stdout: Stdout}
 	json_data, err := json.Marshal(response)
 	if err != nil {
 		ErrorLogger.Println(err)
 	}
-	resp, err := http.Post(URLServer, "application/json", bytes.NewBuffer(json_data))
-	if err != nil {
-		ErrorLogger.Println("An Error Occured ", err)
+	if IsExistsURL(URLServer) {
+		resp, err := http.Post(URLServer, "application/json", bytes.NewBuffer(json_data))
+		if err != nil {
+			ErrorLogger.Println("An Error Occured ", err)
+		}
+		if resp.StatusCode == 200 {
+			return true
+		}
+		ErrorLogger.Println("Status code != 200. Status code is ", resp.StatusCode)
+		ErrorLogger.Println("Error ID - ", response.ID)
 	}
-	if resp.StatusCode == 200 {
-		return true
-	}
-	ErrorLogger.Println("Status code != 200. Status code is ", resp.StatusCode)
-	ErrorLogger.Println("Error ID - ", response.ID)
 	return false
 }
 
@@ -126,7 +139,7 @@ func copyAndCapture(w io.Writer, r io.Reader) ([]byte, error) {
 }
 
 func Native(dataStruct CMD) string {
-	var fileExecute string = "/tmp/webhook.execute"
+	var fileExecute string = "/var/log/webhook.execute"
 	if saveToFile(dataStruct, fileExecute) {
 		var timeExecute = time.Duration(dataStruct.TimeExec)
 		var stdout, stderr []byte
@@ -180,47 +193,50 @@ func Native(dataStruct CMD) string {
 	return "error"
 }
 
-func Validate(dataStruct CMD) bool {
-	var Token string = "VeryStrongString"
-	var SecretURL string = "https://raw.githubusercontent.com/Hera-system/TOTP/main/TOTP"
-	var Secret string
-	if dataStruct.Token != Token {
-		return false
-	}
-	res, err := http.Get(SecretURL)
-	if err != nil {
-		ErrorLogger.Println("Error making http request: ", err)
-		return false
-	}
-	if res.StatusCode == 401 {
-		res.Request.SetBasicAuth(dataStruct.HTTPUser, dataStruct.HTTPPassword)
-		res, err := http.Get(SecretURL)
-		if err != nil {
-			ErrorLogger.Println("Error making http request: ", err)
-			return false
-		}
-		out, err := io.ReadAll(res.Body)
-		if err != nil {
-			return false
-		}
-		Secret = string(out)
-	}
-	if res.StatusCode != 200 {
-		ErrorLogger.Println("Resonse code is not 200: ", res.StatusCode)
-		return false
-	}
-	out, err := io.ReadAll(res.Body)
-	if err != nil {
-		ErrorLogger.Println("Error read body: ", err)
-		return false
-	}
-	Secret = string(out)
-	if Secret != dataStruct.HTTPSecret {
-		ErrorLogger.Println("Error HTTPSecret")
-		return false
-	}
-	return true
-}
+// func Validate(dataStruct CMD) bool {
+// 	var Token string = "VeryStrongString"
+// 	var SecretURL string = "https://raw.githubusercontent.com/Hera-system/TOTP/main/TOTP"
+// 	var Secret string
+// 	if dataStruct.Token != Token {
+// 		return false
+// 	}
+// 	if IsExistsURL(SecretURL) == false {
+// 		ErrorLogger.Println("Secret url is not exist.")
+// 	}
+// 	res, err := http.Get(SecretURL)
+// 	if err != nil {
+// 		ErrorLogger.Println("Error making http request: ", err)
+// 		return false
+// 	}
+// 	if res.StatusCode == 401 {
+// 		res.Request.SetBasicAuth(dataStruct.HTTPUser, dataStruct.HTTPPassword)
+// 		res, err := http.Get(SecretURL)
+// 		if err != nil {
+// 			ErrorLogger.Println("Error making http request: ", err)
+// 			return false
+// 		}
+// 		out, err := io.ReadAll(res.Body)
+// 		if err != nil {
+// 			return false
+// 		}
+// 		Secret = string(out)
+// 	}
+// 	if res.StatusCode != 200 {
+// 		ErrorLogger.Println("Resonse code is not 200: ", res.StatusCode)
+// 		return false
+// 	}
+// 	out, err := io.ReadAll(res.Body)
+// 	if err != nil {
+// 		ErrorLogger.Println("Error read body: ", err)
+// 		return false
+// 	}
+// 	Secret = string(out)
+// 	if Secret != dataStruct.HTTPSecret {
+// 		ErrorLogger.Println("Error HTTPSecret")
+// 		return false
+// 	}
+// 	return true
+// }
 
 func ExecuteCommand(w http.ResponseWriter, r *http.Request) {
 	var dataStruct CMD
@@ -274,10 +290,13 @@ func main() {
 		fmt.Println("Args URL not used. Exit.")
 		ErrorLogger.Fatal("Args URL not used. Exit.")
 	}
-	fmt.Println(IsUrl(*URLPtr))
 	if IsUrl(*URLPtr) == false {
 		fmt.Println("Error validate URL - ", *URLPtr)
 		ErrorLogger.Fatal("Error validate URL - ", *URLPtr)
+	}
+	if IsExistsURL(*URLPtr) == false {
+		fmt.Println("URL is not exist - ", *URLPtr)
+		os.Exit(1)
 	}
 	URLServer = *URLPtr
 	mux := http.NewServeMux()
