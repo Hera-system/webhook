@@ -326,7 +326,7 @@ func main() {
 	if WKSetings.LogPath == *LogPtr {
 		fmt.Println("Args -Log not use. Used default path: ", WKSetings.LogPath)
 	}
-	WKSetings.Version = "v0.0.5"
+	WKSetings.Version = "v0.0.6"
 	WKSetings.LogPath = *LogPtr
 	WKSetings.URLServer = *URLPtr
 	WKSetings.FileExecute = *ExecFile
