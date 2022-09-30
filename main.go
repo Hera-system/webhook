@@ -35,12 +35,6 @@ type dataResponse struct {
 	Message string `json:"Message"`
 }
 
-var (
-	WarningLogger *log.Logger
-	InfoLogger    *log.Logger
-	ErrorLogger   *log.Logger
-)
-
 type WebhookSetings struct {
 	Version     string `json:"version"`
 	URLServer   string `json:"URLServer"`
@@ -49,7 +43,12 @@ type WebhookSetings struct {
 	FileExecute string `json:"FileExecute"`
 }
 
-var WKSetings WebhookSetings
+var (
+	WarningLogger *log.Logger
+	InfoLogger    *log.Logger
+	ErrorLogger   *log.Logger
+	WKSetings     WebhookSetings
+)
 
 func LogFunc() {
 	file, err := os.OpenFile(WKSetings.LogPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
