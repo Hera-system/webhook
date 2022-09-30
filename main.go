@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/Hera-system/webhook/utils"
 	"io"
 	"log"
 	"net/http"
@@ -42,12 +41,18 @@ var (
 	ErrorLogger   *log.Logger
 )
 
-var Version string = "v0.0.5"
-var URLServer string = "None"
-var LogPath string = "/var/log/webhook.executor.log"
+type WebhookSetings struct {
+	Version     string `json:"version"`
+	URLServer   string `json:"URLServer"`
+	Port        int    `json:"Port"`
+	LogPath     string `json:"LogPath"`
+	FileExecute string `json:"FileExecute"`
+}
+
+var WKSetings WebhookSetings
 
 func LogFunc() {
-	file, err := os.OpenFile(LogPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	file, err := os.OpenFile(WKSetings.LogPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -63,14 +68,15 @@ func HealtCheak(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Method not allowed."))
 		return
 	}
-	w.Write([]byte(Version))
+	w.Write([]byte(WKSetings.Version))
 	return
 }
 
-func saveToFile(dataStruct CMD, fileExecute string) bool {
-	file, err := os.Create(fileExecute)
+func saveToFile(dataStruct CMD) bool {
+	file, err := os.Create(WKSetings.FileExecute)
 	if err != nil {
-		tmp := "Unable to create exetuable file. Path: " + fileExecute + ". Shutdown webhook..."
+		tmp := "Unable to create exetuable file. Path: " + WKSetings.FileExecute + ". Shutdown webhook..."
+		fmt.Println(tmp)
 		sendResult(tmp, dataStruct, true, "", "")
 		ErrorLogger.Fatalln(tmp, err)
 		return false
@@ -78,7 +84,7 @@ func saveToFile(dataStruct CMD, fileExecute string) bool {
 	file.WriteString(dataStruct.Shebang + "\n")
 	file.WriteString(dataStruct.ExecCommand)
 	file.Close()
-	err = os.Chmod(fileExecute, 0700)
+	err = os.Chmod(WKSetings.FileExecute, 0700)
 	if err != nil {
 		ErrorLogger.Println(err)
 		return false
@@ -101,8 +107,8 @@ func sendResult(data string, dataStruct CMD, Error bool, Stdout string, Stderr s
 	if err != nil {
 		ErrorLogger.Println(err)
 	}
-	if IsExistsURL(URLServer) {
-		resp, err := http.Post(URLServer, "application/json", bytes.NewBuffer(json_data))
+	if IsExistsURL(WKSetings.URLServer) {
+		resp, err := http.Post(WKSetings.URLServer, "application/json", bytes.NewBuffer(json_data))
 		if err != nil {
 			ErrorLogger.Println("An Error Occured ", err)
 		}
@@ -139,12 +145,11 @@ func copyAndCapture(w io.Writer, r io.Reader) ([]byte, error) {
 }
 
 func Native(dataStruct CMD) string {
-	var fileExecute string = "/var/log/webhook.execute"
-	if saveToFile(dataStruct, fileExecute) {
+	if saveToFile(dataStruct) {
 		var timeExecute = time.Duration(dataStruct.TimeExec)
 		var stdout, stderr []byte
 		var errStdout, errStderr error
-		cmd := exec.Command(dataStruct.Interpreter, fileExecute)
+		cmd := exec.Command(dataStruct.Interpreter, WKSetings.FileExecute)
 		stdoutIn, _ := cmd.StdoutPipe()
 		if err := cmd.Start(); err != nil {
 			ErrorLogger.Println(err)
@@ -175,7 +180,7 @@ func Native(dataStruct CMD) string {
 			}
 			InfoLogger.Println("Process finished successfully")
 		}
-		err := os.Remove(fileExecute)
+		err := os.Remove(WKSetings.FileExecute)
 		if err != nil {
 			ErrorLogger.Println(err)
 		}
@@ -193,50 +198,50 @@ func Native(dataStruct CMD) string {
 	return "error"
 }
 
-// func Validate(dataStruct CMD) bool {
-// 	var Token string = "VeryStrongString"
-// 	var SecretURL string = "https://raw.githubusercontent.com/Hera-system/TOTP/main/TOTP"
-// 	var Secret string
-// 	if dataStruct.Token != Token {
-// 		return false
-// 	}
-// 	if IsExistsURL(SecretURL) == false {
-// 		ErrorLogger.Println("Secret url is not exist.")
-// 	}
-// 	res, err := http.Get(SecretURL)
-// 	if err != nil {
-// 		ErrorLogger.Println("Error making http request: ", err)
-// 		return false
-// 	}
-// 	if res.StatusCode == 401 {
-// 		res.Request.SetBasicAuth(dataStruct.HTTPUser, dataStruct.HTTPPassword)
-// 		res, err := http.Get(SecretURL)
-// 		if err != nil {
-// 			ErrorLogger.Println("Error making http request: ", err)
-// 			return false
-// 		}
-// 		out, err := io.ReadAll(res.Body)
-// 		if err != nil {
-// 			return false
-// 		}
-// 		Secret = string(out)
-// 	}
-// 	if res.StatusCode != 200 {
-// 		ErrorLogger.Println("Resonse code is not 200: ", res.StatusCode)
-// 		return false
-// 	}
-// 	out, err := io.ReadAll(res.Body)
-// 	if err != nil {
-// 		ErrorLogger.Println("Error read body: ", err)
-// 		return false
-// 	}
-// 	Secret = string(out)
-// 	if Secret != dataStruct.HTTPSecret {
-// 		ErrorLogger.Println("Error HTTPSecret")
-// 		return false
-// 	}
-// 	return true
-// }
+func Validate(dataStruct CMD) bool {
+	var Token string = "VeryStrongString"
+	var SecretURL string = "https://raw.githubusercontent.com/Hera-system/TOTP/main/TOTP"
+	var Secret string
+	if dataStruct.Token != Token {
+		return false
+	}
+	if IsExistsURL(SecretURL) == false {
+		ErrorLogger.Println("Secret url is not exist.")
+	}
+	res, err := http.Get(SecretURL)
+	if err != nil {
+		ErrorLogger.Println("Error making http request: ", err)
+		return false
+	}
+	if res.StatusCode == 401 {
+		res.Request.SetBasicAuth(dataStruct.HTTPUser, dataStruct.HTTPPassword)
+		res, err := http.Get(SecretURL)
+		if err != nil {
+			ErrorLogger.Println("Error making http request: ", err)
+			return false
+		}
+		out, err := io.ReadAll(res.Body)
+		if err != nil {
+			return false
+		}
+		Secret = string(out)
+	}
+	if res.StatusCode != 200 {
+		ErrorLogger.Println("Resonse code is not 200: ", res.StatusCode)
+		return false
+	}
+	out, err := io.ReadAll(res.Body)
+	if err != nil {
+		ErrorLogger.Println("Error read body: ", err)
+		return false
+	}
+	Secret = string(out)
+	if Secret != dataStruct.HTTPSecret {
+		ErrorLogger.Println("Error HTTPSecret")
+		return false
+	}
+	return true
+}
 
 func ExecuteCommand(w http.ResponseWriter, r *http.Request) {
 	var dataStruct CMD
@@ -276,35 +281,69 @@ func IsUrl(str string) bool {
 	return err == nil && u.Scheme != "" && u.Host != ""
 }
 
-func main() {
-	PortPtr := flag.Int("Port", 7342, "Webhook port.")
-	URLPtr := flag.String("URL", "None", "URL send result.")
-	LogPtr := flag.String("Log", LogPath, "Log path.")
-	flag.Parse()
-	if LogPath == *LogPtr {
-		fmt.Println("Args -Log not use. Used default path: ", LogPath)
+func TestAfterStart() bool {
+	InfoLogger.Println("Test after start - starting.")
+	file, err := os.Create(WKSetings.FileExecute)
+	if err != nil {
+		tmp := "Unable to create exetuable file. Path: " + WKSetings.FileExecute + ". Shutdown webhook..."
+		fmt.Println(tmp)
+		ErrorLogger.Fatalln(tmp, err)
+		return false
 	}
-	LogPath = *LogPtr
-	LogFunc()
-	if *URLPtr == "None" {
+	file.WriteString("TEST STRING")
+	file.Close()
+	err = os.Chmod(WKSetings.FileExecute, 0700)
+	if err != nil {
+		ErrorLogger.Println(err)
+		return false
+	}
+	err = os.Remove(WKSetings.FileExecute)
+	if err != nil {
+		ErrorLogger.Println(err)
+		return false
+	}
+	if WKSetings.URLServer == "None" {
 		fmt.Println("Args URL not used. Exit.")
 		ErrorLogger.Fatal("Args URL not used. Exit.")
 	}
-	if IsUrl(*URLPtr) == false {
-		fmt.Println("Error validate URL - ", *URLPtr)
-		ErrorLogger.Fatal("Error validate URL - ", *URLPtr)
+	if IsUrl(WKSetings.URLServer) == false {
+		fmt.Println("Error validate URL - ", WKSetings.URLServer)
+		ErrorLogger.Fatal("Error validate URL - ", WKSetings.URLServer)
 	}
-	if IsExistsURL(*URLPtr) == false {
-		fmt.Println("URL is not exist - ", *URLPtr)
+	if IsExistsURL(WKSetings.URLServer) == false {
+		fmt.Println("URL is not exist - ", WKSetings.URLServer)
 		os.Exit(1)
 	}
-	URLServer = *URLPtr
-	mux := http.NewServeMux()
-	mux.HandleFunc("/execute", ExecuteCommand)
-	mux.HandleFunc("/healtcheak", HealtCheak)
-	ServerAddress := ":" + fmt.Sprint(*PortPtr)
-	InfoLogger.Println("Startup on ", ServerAddress)
-	fmt.Println("Startup on ", ServerAddress)
-	error := http.ListenAndServe(ServerAddress, mux)
-	ErrorLogger.Println(error)
+	return true
+}
+
+func main() {
+	PortPtr := flag.Int("Port", 7342, "Webhook port.")
+	URLPtr := flag.String("URL", "None", "URL send result.")
+	LogPtr := flag.String("Log", "/var/log/webhook.execute.log", "Log path.")
+	ExecFile := flag.String("ExecFile", "/tmp/webhook.execute", "Path to execute file.")
+	flag.Parse()
+	if WKSetings.LogPath == *LogPtr {
+		fmt.Println("Args -Log not use. Used default path: ", WKSetings.LogPath)
+	}
+	WKSetings.Version = "v0.0.5"
+	WKSetings.LogPath = *LogPtr
+	WKSetings.URLServer = *URLPtr
+	WKSetings.FileExecute = *ExecFile
+	WKSetings.Port = *PortPtr
+	LogFunc()
+
+	if TestAfterStart() {
+		mux := http.NewServeMux()
+		mux.HandleFunc("/execute", ExecuteCommand)
+		mux.HandleFunc("/healtcheak", HealtCheak)
+		ServerAddress := ":" + fmt.Sprint(WKSetings.Port)
+		InfoLogger.Println("Startup on ", ServerAddress)
+		fmt.Println("Startup on ", ServerAddress)
+		error := http.ListenAndServe(ServerAddress, mux)
+		ErrorLogger.Println(error)
+	} else {
+		fmt.Println("Error test after start.")
+		ErrorLogger.Fatalln("Error test after start.")
+	}
 }

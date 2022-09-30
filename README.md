@@ -67,15 +67,16 @@ ExecCommand
 * * `URL` - Адрес куда будет слать результат
 * * `PORT` - порт который будет слушать утилита. По дефолту - `7342`.
 * * `Log` - Файл логов. По дефолту - `/var/log/webhook.executor.log`
+* * `ExecFile` - Исполняемый файл. По дефолту - `/tmp/webhook.execute`
 
 Запуск:
 
 ```
-webhook -Port=9999 -URL=http://hera.system:7777/api/v1/result -Log=/tmp/webhook.log
+webhook -Port=9999 -URL=http://hera.system:7777/api/v1/result -Log=/tmp/webhook.log -ExecFile=/tmp/webhook
 ```
 
 RUN:
 
 ```
-go run . -Port=9999 -URL=http://hera.system:7777/api/v1/result -Log=/tmp/webhook.log
+go run . -Port=9999 -URL=http://hera.system:7777/api/v1/result -Log=/tmp/webhook.log -ExecFile=/tmp/webhook
 ```
