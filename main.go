@@ -15,32 +15,34 @@ import (
 )
 
 type CMD struct {
-	ExecCommand  string `json:"ExecCommand"`
-	Shebang      string `json:"Shebang"`
 	TimeExec     int    `json:"TimeExec"`
-	Token        string `json:"Token"`
-	Interpreter  string `json:"Interpreter"`
 	ID           string `json:"ID"`
+	Token        string `json:"Token"`
+	Shebang      string `json:"Shebang"`
 	HTTPUser     string `json:"HTTPUser"`
-	HTTPPassword string `json:"HTTPPassword"`
 	HTTPSecret   string `json:"HTTPSecret"`
+	Interpreter  string `json:"Interpreter"`
+	ExecCommand  string `json:"ExecCommand"`
+	HTTPPassword string `json:"HTTPPassword"`
 }
 
 type dataResponse struct {
 	Error   bool   `json:"Error"`
-	Stdout  string `json:"Stdout"`
-	Stderr  string `json:"Stderr"`
 	ID      string `json:"ID"`
 	Token   string `json:"Token"`
+	Stdout  string `json:"Stdout"`
+	Stderr  string `json:"Stderr"`
 	Message string `json:"Message"`
 }
 
 type WebhookSetings struct {
-	Version     string `json:"version"`
-	URLServer   string `json:"URLServer"`
-	Port        int    `json:"Port"`
-	LogPath     string `json:"LogPath"`
-	FileExecute string `json:"FileExecute"`
+	Port           int    `json:"Port"`
+	LogPath        string `json:"LogPath"`
+	Version        string `json:"version"`
+	URLServer      string `json:"URLServer"`
+	FileExecute    string `json:"FileExecute"`
+	SecretToken    string `json:"SecretToken"`
+	HTTPSectretURL string `json:"HTTPSectretURL"`
 }
 
 var (
@@ -198,23 +200,21 @@ func Native(dataStruct CMD) string {
 }
 
 func Validate(dataStruct CMD) bool {
-	var Token string = "VeryStrongString"
-	var SecretURL string = "https://raw.githubusercontent.com/Hera-system/TOTP/main/TOTP"
 	var Secret string
-	if dataStruct.Token != Token {
+	if dataStruct.Token != WKSetings.SecretToken {
 		return false
 	}
-	if IsExistsURL(SecretURL) == false {
+	if IsExistsURL(WKSetings.HTTPSectretURL) == false {
 		ErrorLogger.Println("Secret url is not exist.")
 	}
-	res, err := http.Get(SecretURL)
+	res, err := http.Get(WKSetings.HTTPSectretURL)
 	if err != nil {
 		ErrorLogger.Println("Error making http request: ", err)
 		return false
 	}
 	if res.StatusCode == 401 {
 		res.Request.SetBasicAuth(dataStruct.HTTPUser, dataStruct.HTTPPassword)
-		res, err := http.Get(SecretURL)
+		res, err := http.Get(WKSetings.HTTPSectretURL)
 		if err != nil {
 			ErrorLogger.Println("Error making http request: ", err)
 			return false
@@ -301,7 +301,15 @@ func TestAfterStart() bool {
 		ErrorLogger.Println(err)
 		return false
 	}
-	if WKSetings.URLServer == "None" {
+	if WKSetings.SecretToken == "" {
+		fmt.Println("Args SecretToken not used. Exit.")
+		ErrorLogger.Fatal("Args SecretToken not used. Exit.")
+	}
+	if WKSetings.HTTPSectretURL == "" {
+		fmt.Println("Args HTTPSecret not used. Exit.")
+		ErrorLogger.Fatal("Args HTTPSecret not used. Exit.")
+	}
+	if WKSetings.URLServer == "" {
 		fmt.Println("Args URL not used. Exit.")
 		ErrorLogger.Fatal("Args URL not used. Exit.")
 	}
@@ -317,19 +325,20 @@ func TestAfterStart() bool {
 }
 
 func main() {
-	PortPtr := flag.Int("Port", 7342, "Webhook port.")
-	URLPtr := flag.String("URL", "None", "URL send result.")
-	LogPtr := flag.String("Log", "/var/log/webhook.execute.log", "Log path.")
-	ExecFile := flag.String("ExecFile", "/tmp/webhook.execute", "Path to execute file.")
+	ConfFile := flag.String("conf", "config.json", "Path to conf file.")
 	flag.Parse()
-	if WKSetings.LogPath == *LogPtr {
-		fmt.Println("Args -Log not use. Used default path: ", WKSetings.LogPath)
+	file, err := os.Open(*ConfFile)
+	if err != nil {
+		log.Println(err)
+		log.Fatalln("Error open conf file -", *ConfFile)
 	}
-	WKSetings.Version = "v0.0.6"
-	WKSetings.LogPath = *LogPtr
-	WKSetings.URLServer = *URLPtr
-	WKSetings.FileExecute = *ExecFile
-	WKSetings.Port = *PortPtr
+	defer file.Close()
+	decoder := json.NewDecoder(file)
+	err = decoder.Decode(&WKSetings)
+	if err != nil {
+		log.Fatalln("error:", err)
+	}
+	WKSetings.Version = "v0.0.7"
 	LogFunc()
 
 	if TestAfterStart() {

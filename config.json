@@ -1,0 +1,8 @@
+{
+    "Port": 7342,
+    "LogPath": "/var/log/webhook.execute.log",
+    "URLServer": "http://google.com",
+    "FileExecute": "/tmp/webhook.execute",
+    "SecretToken": "VeryStrongString",
+    "HTTPSectretURL": "https://raw.githubusercontent.com/Hera-system/HTTPSecret/main/HTTPSecret"
+}
