@@ -338,7 +338,7 @@ func main() {
 	if err != nil {
 		log.Fatalln("error:", err)
 	}
-	WKSetings.Version = "v0.0.7"
+	WKSetings.Version = "v0.0.8"
 	LogFunc()
 
 	if TestAfterStart() {
