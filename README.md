@@ -5,36 +5,36 @@
 # Webhook.
 
 ---
-Работает с POST. Принимает POST запросы на эндпоинты `/healtcheak` и `/execute`
+Works with POST. Accepts POST requests for endpoints `/healtcheak` и `/execute`
 
-## Эндпоинт `/execute`
+## Endpoint `/execute`
 
-Параметры передаваемые в POST:
-* `ExecCommand` - Комада. Тип данных - `string`. Обязательное значение.
-* `Interpreter` - Интерпретатор. Возможные значения - `/bin/sh`, `/bin/bash` и другие(например `Python`). Тип данных - `string`. Обязательное значение.
-* `Shebang` - Шебанг. Возможные значения - `#!/bin/sh`, `#!/bin/sh` и другие(например `Python`). Тип данных - `string`. Обязательное значение.
-* `TimeExec` - Время выполнения кода, в секундах. Тип данных -`INT`! Обязательное значение.
-* `Token` - Токен. Тип данных - `string`. Обязательное значение.
-* `ID` - ID задачи. Тип данных - `string`. Обязательное значение.
-* `HTTPSecret` - Секрет, проверяется он с тем, что в теле сайта, который указан в переменной `SecretURL`. Сейчас активный секрет это - `VeryStorngString\n`. Тип данных - `string`. Обязательное значение.
-* `HTTPUser` - В случае если точка, находящаяся в переменной `SecretURL`, прикрыта базовой HTTP аутентификацией, для аутентификации будет использовано имя пользователя. Тип данных - `string`. Не обязательное значение.
-* `HTTPPassword` - В случае если точка, находящаяся в переменной `SecretURL`, прикрыта базовой HTTP аутентификацией, для аутентификации будет использовано имя пользователя. Тип данных - `string`. Не обязательное значение.
+Parameters passed to the POST:
+* `ExecCommand` - Execution command. Data type - `string`. Required value.
+* `Interpreter` - Interpreter. Possible values - `/bin/sh`, `/bin/bash` etc. Data type - `string`. Required value.
+* `Shebang` - Shebang. Possible values - `#!/bin/sh`, `#!/bin/sh` etc. Data type - `string`. Required value.
+* `TimeExec` - Code execution time, in seconds. Data type -`INT`! Required value.
+* `Token` - Token. Data type - `string`. Required value.
+* `ID` - ID task. Data type - `string`. Required value.
+* `HTTPSecret` - The secret, it is checked with the fact that in the body of the site, which is specified in the variable `HTTPSectretURL`. Data type - `string`. Required value.
+* `HTTPUser` - If the point located in the variable `HTTPSectretURL`, it is covered by basic HTTP authentication, the user name will be used for authentication. Data type - `string`. Optional value.
+* `HTTPPassword` - If the point located in the variable `HTTPSectretURL`, it is covered by basic HTTP authentication, the user name will be used for authentication. Data type - `string`. Required value.
 
 
-Данные передаются в `JSON`, пример:
+Data is passed to 'JSON', example:
 ```json
 {"ExecCommand": "curl -s https://example.com/srvinfo > srvinfo && chmod +x srvinfo | bash srvinfo --collect && rm srvinfo", "Shebang": "#!/bin/bash", "Interpreter": "/bin/bash", "Token": "VeryStrongString", "TimeExec": 3, "ID": "e321e", "HTTPSecret": "VeryStorngString\n"}
 ```
 
-### Возврат значения
+### Returning a value
 
-При возвращении выполняет `POST` запрос на адрес `URL_SERVER`(из переменной окружения) и отправялет следующие данные:
+When returning, it executes a `POST` request to the `URL_SERVER` address (from the environment variable) and sends the following data:
 
 ```json
 {"Error":false,"Stdout":"test\n","Stderr":"","ID":"e321e","Token":"VeryStrongString","Message":"OK"}
 ```
 
-Если же возникла ошибка во время выполнения:
+If an error occurred during execution:
 
 ```json
 {"Error":true,"Stdout":"","Stderr":"","ID":"e321e","Token":"VeryStrongString","Message":"Error, check args and logs."}
@@ -44,39 +44,35 @@
 {"Error":true,"Stdout":"","Stderr":"","ID":"e321e","Token":"VeryStrongString","Message":"Process killed as timeout reached."}
 ```
 
-## Эндпоинт `/healtcheak`
+## Endpoint `/healtcheak`
 
-Принимает только `POST` и возвращает `HTTP` статус код - `200`. В теле находится версия.
+Accepts only `POST` and returns `HTTP` status code - `200'. The body contains the version.
 
-## Особености работы
+## Features of the work
 
-* Все запросы обрабатываются асинхронно. Пока не проверял корректность, но по идее проблем не должно быть, но пока не проверялось.
-* Не проверялась работоспособность базовой аутентификации.
-* Пишет логи в `/var/log/webhook.executor.log`
-* Выводит результат выполнения команды в том числе и в консоль. Пока не знаю как исправить.
-* Сохраняет файл в `/tmp/webhook.execute` с правами 700. Файл имеет следующий вид:
+* All requests are processed asynchronously. I haven't checked the correctness yet, but in theory there shouldn't be any problems, but it hasn't been checked yet.
+* The operability of the basic authentication was not checked.
+* Outputs the result of the command execution, including to the console. I don't know how to fix it yet.
+* Saves the file to `FileExecute` with permissions 700. The file has the following format:
 ```
 Shebang
 ExecCommand
 ```
-* Выполнение команды происходит вот так - `Interpreter /tmp/webhook.execute`. 
+* The command execution happens like this - `Interpreter FileExecute`. 
 
-## Особенности запуска
+## Launch Features
 
-* Требует указать аргументы:
-* * `URL` - Адрес куда будет слать результат
-* * `PORT` - порт который будет слушать утилита. По дефолту - `7342`.
-* * `Log` - Файл логов. По дефолту - `/var/log/webhook.executor.log`
-* * `ExecFile` - Исполняемый файл. По дефолту - `/tmp/webhook.execute`
+* Requires to specify arguments:
+* * `conf` - Configuration file. By default - `config.json`.
 
-Запуск:
+Launch:
 
 ```
-webhook -Port=9999 -URL=http://hera.system:7777/api/v1/result -Log=/tmp/webhook.log -ExecFile=/tmp/webhook
+webhook -conf=config.json
 ```
 
 RUN:
 
 ```
-go run . -Port=9999 -URL=http://hera.system:7777/api/v1/result -Log=/tmp/webhook.log -ExecFile=/tmp/webhook
+go run . -conf=config.json
 ```
