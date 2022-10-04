@@ -111,7 +111,7 @@ func sendResult(data string, dataStruct CMD, Error bool, Stdout string, Stderr s
 	if IsExistsURL(WKSetings.URLServer) {
 		resp, err := http.Post(WKSetings.URLServer, "application/json", bytes.NewBuffer(json_data))
 		if err != nil {
-			ErrorLogger.Println("An Error Occured ", err)
+			ErrorLogger.Println("An Error Occurred ", err)
 		}
 		if resp.StatusCode == 200 {
 			return true
@@ -163,7 +163,7 @@ func Native(dataStruct CMD) string {
 		select {
 		case <-time.After(timeExecute * time.Second):
 			if err := cmd.Process.Kill(); err != nil {
-				tmp := "Failed to kill proccess. "
+				tmp := "Failed to kill process. "
 				ErrorLogger.Println(tmp, err)
 				sendResult(tmp, dataStruct, true, "", "")
 				return (tmp)
