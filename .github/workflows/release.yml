@@ -7,6 +7,18 @@ env:
   BINARY_NAME: webhook
 
 jobs:
+  golangci:
+    name: lint
+    runs-on: [macos-latest, windows-latest, ubuntu-latest]
+    steps:
+      - uses: actions/setup-go@v3
+        with:
+          go-version: 1.18.x
+      - uses: actions/checkout@v3
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
   release-linux-amd64:
     name: release linux/amd64
     runs-on: ubuntu-latest
