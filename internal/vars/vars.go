@@ -10,6 +10,18 @@ type WebhookSetings struct {
 	HTTPSectretURL string `json:"HTTPSectretURL"`
 }
 
+type CMD struct {
+	TimeExec     int    `json:"TimeExec"`
+	ID           string `json:"ID"`
+	Token        string `json:"Token"`
+	Shebang      string `json:"Shebang"`
+	HTTPUser     string `json:"HTTPUser"`
+	HTTPSecret   string `json:"HTTPSecret"`
+	Interpreter  string `json:"Interpreter"`
+	ExecCommand  string `json:"ExecCommand"`
+	HTTPPassword string `json:"HTTPPassword"`
+}
+
 var (
 	WKSetings WebhookSetings
 )

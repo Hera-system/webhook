@@ -16,18 +16,6 @@ import (
 	"github.com/hera-system/webhook/utils"
 )
 
-type CMD struct {
-	TimeExec     int    `json:"TimeExec"`
-	ID           string `json:"ID"`
-	Token        string `json:"Token"`
-	Shebang      string `json:"Shebang"`
-	HTTPUser     string `json:"HTTPUser"`
-	HTTPSecret   string `json:"HTTPSecret"`
-	Interpreter  string `json:"Interpreter"`
-	ExecCommand  string `json:"ExecCommand"`
-	HTTPPassword string `json:"HTTPPassword"`
-}
-
 func HealtCheak(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		w.WriteHeader(http.StatusMethodNotAllowed)
@@ -38,27 +26,30 @@ func HealtCheak(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-func saveToFile(dataStruct CMD) bool {
-	file, err := os.Create(vars.WKSetings.FileExecute)
-	if err != nil {
-		tmp := "Unable to create exetuable file. Path: " + vars.WKSetings.FileExecute + ". Shutdown webhook..."
-		fmt.Println(tmp)
-		sendResult(tmp, dataStruct, true, "", "")
-		log.Error.Fatalln(tmp, err)
-		return false
+func copyAndCapture(w io.Writer, r io.Reader) ([]byte, error) {
+	var out []byte
+	buf := make([]byte, 1024, 1024)
+	for {
+		n, err := r.Read(buf[:])
+		if n > 0 {
+			d := buf[:n]
+			out = append(out, d...)
+			_, err := w.Write(d)
+			if err != nil {
+				return out, err
+			}
+		}
+		if err != nil {
+			// Read returns io.EOF at the end of file, which is not an error for us
+			if err == io.EOF {
+				err = nil
+			}
+			return out, err
+		}
 	}
-	file.WriteString(dataStruct.Shebang + "\n")
-	file.WriteString(dataStruct.ExecCommand)
-	file.Close()
-	err = os.Chmod(vars.WKSetings.FileExecute, 0700)
-	if err != nil {
-		log.Error.Println(err)
-		return false
-	}
-	return true
 }
 
-func sendResult(data string, dataStruct CMD, Error bool, Stdout string, Stderr string) bool {
+func sendResult(data string, dataStruct vars.CMD, Error bool, Stdout string, Stderr string) bool {
 	type dataResponse struct {
 		Error   bool   `json:"Error"`
 		ID      string `json:"ID"`
@@ -86,30 +77,7 @@ func sendResult(data string, dataStruct CMD, Error bool, Stdout string, Stderr s
 	return false
 }
 
-func copyAndCapture(w io.Writer, r io.Reader) ([]byte, error) {
-	var out []byte
-	buf := make([]byte, 1024, 1024)
-	for {
-		n, err := r.Read(buf[:])
-		if n > 0 {
-			d := buf[:n]
-			out = append(out, d...)
-			_, err := w.Write(d)
-			if err != nil {
-				return out, err
-			}
-		}
-		if err != nil {
-			// Read returns io.EOF at the end of file, which is not an error for us
-			if err == io.EOF {
-				err = nil
-			}
-			return out, err
-		}
-	}
-}
-
-func Native(dataStruct CMD) string {
+func Native(dataStruct vars.CMD) string {
 	if saveToFile(dataStruct) {
 		var timeExecute = time.Duration(dataStruct.TimeExec)
 		var stdout, stderr []byte
@@ -163,7 +131,27 @@ func Native(dataStruct CMD) string {
 	return "error"
 }
 
-func Validate(dataStruct CMD) bool {
+func saveToFile(dataStruct vars.CMD) bool {
+	file, err := os.Create(vars.WKSetings.FileExecute)
+	if err != nil {
+		tmp := "Unable to create exetuable file. Path: " + vars.WKSetings.FileExecute + ". Shutdown webhook..."
+		fmt.Println(tmp)
+		sendResult(tmp, dataStruct, true, "", "")
+		log.Error.Fatalln(tmp, err)
+		return false
+	}
+	file.WriteString(dataStruct.Shebang + "\n")
+	file.WriteString(dataStruct.ExecCommand)
+	file.Close()
+	err = os.Chmod(vars.WKSetings.FileExecute, 0700)
+	if err != nil {
+		log.Error.Println(err)
+		return false
+	}
+	return true
+}
+
+func Validate(dataStruct vars.CMD) bool {
 	var Secret string
 	if dataStruct.Token != vars.WKSetings.SecretToken {
 		return false
@@ -207,7 +195,7 @@ func Validate(dataStruct CMD) bool {
 }
 
 func ExecuteCommand(w http.ResponseWriter, r *http.Request) {
-	var dataStruct CMD
+	var dataStruct vars.CMD
 	if r.Method != "POST" {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		w.Write([]byte("Method not allowed."))
