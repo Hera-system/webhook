@@ -6,13 +6,14 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
-	"net/url"
 	"os"
 	"os/exec"
-	"os/user"
 	"time"
+
+	"github.com/hera-system/webhook/internal/log"
+	"github.com/hera-system/webhook/internal/vars"
+	"github.com/hera-system/webhook/utils"
 )
 
 type CMD struct {
@@ -27,120 +28,60 @@ type CMD struct {
 	HTTPPassword string `json:"HTTPPassword"`
 }
 
-type dataResponse struct {
-	Error   bool   `json:"Error"`
-	ID      string `json:"ID"`
-	Token   string `json:"Token"`
-	Stdout  string `json:"Stdout"`
-	Stderr  string `json:"Stderr"`
-	Message string `json:"Message"`
-}
-
-type WebhookSetings struct {
-	Port           int    `json:"Port"`
-	LogPath        string `json:"LogPath"`
-	Version        string `json:"version"`
-	URLServer      string `json:"URLServer"`
-	FileExecute    string `json:"FileExecute"`
-	SecretToken    string `json:"SecretToken"`
-	HTTPSectretURL string `json:"HTTPSectretURL"`
-}
-
-var (
-	WarningLogger *log.Logger
-	InfoLogger    *log.Logger
-	ErrorLogger   *log.Logger
-	WKSetings     WebhookSetings
-)
-
-func LogFunc() {
-	file, err := os.OpenFile(WKSetings.LogPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	InfoLogger = log.New(file, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile)
-	WarningLogger = log.New(file, "WARNING: ", log.Ldate|log.Ltime|log.Lshortfile)
-	ErrorLogger = log.New(file, "ERROR: ", log.Ldate|log.Ltime|log.Lshortfile)
-}
-
 func HealtCheak(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		w.Write([]byte("Method not allowed."))
 		return
 	}
-	w.Write([]byte(WKSetings.Version))
+	w.Write([]byte(vars.WKSetings.Version))
 	return
 }
 
 func saveToFile(dataStruct CMD) bool {
-	file, err := os.Create(WKSetings.FileExecute)
+	file, err := os.Create(vars.WKSetings.FileExecute)
 	if err != nil {
-		tmp := "Unable to create exetuable file. Path: " + WKSetings.FileExecute + ". Shutdown webhook..."
+		tmp := "Unable to create exetuable file. Path: " + vars.WKSetings.FileExecute + ". Shutdown webhook..."
 		fmt.Println(tmp)
 		sendResult(tmp, dataStruct, true, "", "")
-		ErrorLogger.Fatalln(tmp, err)
+		log.Error.Fatalln(tmp, err)
 		return false
 	}
 	file.WriteString(dataStruct.Shebang + "\n")
 	file.WriteString(dataStruct.ExecCommand)
 	file.Close()
-	err = os.Chmod(WKSetings.FileExecute, 0700)
+	err = os.Chmod(vars.WKSetings.FileExecute, 0700)
 	if err != nil {
-		ErrorLogger.Println(err)
-		return false
-	}
-	return true
-}
-
-func IsExistsURL(URL string) bool {
-	type InitSend struct {
-		HostName string `json:"HostName"`
-		UserName string `json:"UserName"`
-	}
-	var (
-		DataSend InitSend
-	)
-	hostname, err := os.Hostname()
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-	DataSend.HostName = hostname
-	currentUser, err := user.Current()
-	if err != nil {
-		log.Fatalf(err.Error())
-	}
-	DataSend.UserName = currentUser.Username
-	JsonData, err := json.Marshal(DataSend)
-	if err != nil {
-		ErrorLogger.Println(err)
-	}
-	_, err = http.Post(URL, "application/json", bytes.NewBuffer(JsonData))
-	if err != nil {
-		ErrorLogger.Println("URL is not exist. URL: ", URL)
+		log.Error.Println(err)
 		return false
 	}
 	return true
 }
 
 func sendResult(data string, dataStruct CMD, Error bool, Stdout string, Stderr string) bool {
+	type dataResponse struct {
+		Error   bool   `json:"Error"`
+		ID      string `json:"ID"`
+		Token   string `json:"Token"`
+		Stdout  string `json:"Stdout"`
+		Stderr  string `json:"Stderr"`
+		Message string `json:"Message"`
+	}
 	response := dataResponse{ID: dataStruct.ID, Error: Error, Token: dataStruct.Token, Message: data, Stderr: Stderr, Stdout: Stdout}
 	JsonData, err := json.Marshal(response)
 	if err != nil {
-		ErrorLogger.Println(err)
+		log.Error.Println(err)
 	}
-	if IsExistsURL(WKSetings.URLServer) {
-		resp, err := http.Post(WKSetings.URLServer, "application/json", bytes.NewBuffer(JsonData))
+	if utils.IsExistsURL(vars.WKSetings.URLServer) {
+		resp, err := http.Post(vars.WKSetings.URLServer, "application/json", bytes.NewBuffer(JsonData))
 		if err != nil {
-			ErrorLogger.Println("An Error Occurred ", err)
+			log.Error.Println("An Error Occurred ", err)
 		}
 		if resp.StatusCode == 200 {
 			return true
 		}
-		ErrorLogger.Println("Status code != 200. Status code is ", resp.StatusCode)
-		ErrorLogger.Println("Error ID - ", response.ID)
+		log.Error.Println("Status code != 200. Status code is ", resp.StatusCode)
+		log.Error.Println("Error ID - ", response.ID)
 	}
 	return false
 }
@@ -173,10 +114,10 @@ func Native(dataStruct CMD) string {
 		var timeExecute = time.Duration(dataStruct.TimeExec)
 		var stdout, stderr []byte
 		var errStdout, errStderr error
-		cmd := exec.Command(dataStruct.Interpreter, WKSetings.FileExecute)
+		cmd := exec.Command(dataStruct.Interpreter, vars.WKSetings.FileExecute)
 		stdoutIn, _ := cmd.StdoutPipe()
 		if err := cmd.Start(); err != nil {
-			ErrorLogger.Println(err)
+			log.Error.Println(err)
 		}
 		done := make(chan error, 1)
 		go func() {
@@ -187,35 +128,35 @@ func Native(dataStruct CMD) string {
 		case <-time.After(timeExecute * time.Second):
 			if err := cmd.Process.Kill(); err != nil {
 				tmp := "Failed to kill process. "
-				ErrorLogger.Println(tmp, err)
+				log.Error.Println(tmp, err)
 				sendResult(tmp, dataStruct, true, "", "")
 				return (tmp)
 			}
 			tmp := "Process killed as timeout reached"
-			WarningLogger.Println(tmp)
+			log.Warn.Println(tmp)
 			sendResult(tmp, dataStruct, true, "", "")
 			return (tmp)
 		case err := <-done:
 			if err != nil {
-				ErrorLogger.Println("Process finished with error = ", err)
-				ErrorLogger.Println("ID - ", dataStruct.ID)
+				log.Error.Println("Process finished with error = ", err)
+				log.Error.Println("ID - ", dataStruct.ID)
 				sendResult("Error, check args and logs.", dataStruct, true, "", "")
 				return ("Error, check args and logs.")
 			}
-			InfoLogger.Println("Process finished successfully")
+			log.Info.Println("Process finished successfully")
 		}
-		err := os.Remove(WKSetings.FileExecute)
+		err := os.Remove(vars.WKSetings.FileExecute)
 		if err != nil {
-			ErrorLogger.Println(err)
+			log.Error.Println(err)
 		}
 		if errStdout != nil || errStderr != nil {
-			ErrorLogger.Println("failed to capture stdout or stderr")
+			log.Error.Println("failed to capture stdout or stderr")
 			sendResult("Failed to capture stdout or stderr.", dataStruct, true, "", "")
 			return "Failed to capture stdout or stderr."
 		}
 		outStr, errStr := string(stdout), string(stderr)
-		InfoLogger.Println("Stdout: ", outStr)
-		InfoLogger.Println("Stderr: ", errStr)
+		log.Info.Println("Stdout: ", outStr)
+		log.Info.Println("Stderr: ", errStr)
 		sendResult("OK", dataStruct, false, outStr, errStr)
 		return "output"
 	}
@@ -224,22 +165,22 @@ func Native(dataStruct CMD) string {
 
 func Validate(dataStruct CMD) bool {
 	var Secret string
-	if dataStruct.Token != WKSetings.SecretToken {
+	if dataStruct.Token != vars.WKSetings.SecretToken {
 		return false
 	}
-	if IsExistsURL(WKSetings.HTTPSectretURL) == false {
-		ErrorLogger.Println("Secret url is not exist.")
+	if utils.IsExistsURL(vars.WKSetings.HTTPSectretURL) == false {
+		log.Error.Println("Secret url is not exist.")
 	}
-	res, err := http.Get(WKSetings.HTTPSectretURL)
+	res, err := http.Get(vars.WKSetings.HTTPSectretURL)
 	if err != nil {
-		ErrorLogger.Println("Error making http request: ", err)
+		log.Error.Println("Error making http request: ", err)
 		return false
 	}
 	if res.StatusCode == 401 {
 		res.Request.SetBasicAuth(dataStruct.HTTPUser, dataStruct.HTTPPassword)
-		res, err := http.Get(WKSetings.HTTPSectretURL)
+		res, err := http.Get(vars.WKSetings.HTTPSectretURL)
 		if err != nil {
-			ErrorLogger.Println("Error making http request: ", err)
+			log.Error.Println("Error making http request: ", err)
 			return false
 		}
 		out, err := io.ReadAll(res.Body)
@@ -249,17 +190,17 @@ func Validate(dataStruct CMD) bool {
 		Secret = string(out)
 	}
 	if res.StatusCode != 200 {
-		ErrorLogger.Println("Resonse code is not 200: ", res.StatusCode)
+		log.Error.Println("Resonse code is not 200: ", res.StatusCode)
 		return false
 	}
 	out, err := io.ReadAll(res.Body)
 	if err != nil {
-		ErrorLogger.Println("Error read body: ", err)
+		log.Error.Println("Error read body: ", err)
 		return false
 	}
 	Secret = string(out)
 	if Secret != dataStruct.HTTPSecret {
-		ErrorLogger.Println("Error HTTPSecret")
+		log.Error.Println("Error HTTPSecret")
 		return false
 	}
 	return true
@@ -278,73 +219,24 @@ func ExecuteCommand(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("Error in processing request."))
-		ErrorLogger.Println(err)
+		log.Error.Println(err)
 		return
 	}
-	InfoLogger.Println("From IP - ", r.RemoteAddr)
-	InfoLogger.Println("Shebang - ", dataStruct.Shebang)
-	InfoLogger.Println("TimeExec - ", dataStruct.TimeExec)
-	InfoLogger.Println("Interpreter - ", dataStruct.Interpreter)
-	InfoLogger.Println("ID - ", dataStruct.ID)
-	InfoLogger.Println("ExecCommand - ", dataStruct.ExecCommand)
+	log.Info.Println("From IP - ", r.RemoteAddr)
+	log.Info.Println("Shebang - ", dataStruct.Shebang)
+	log.Info.Println("TimeExec - ", dataStruct.TimeExec)
+	log.Info.Println("Interpreter - ", dataStruct.Interpreter)
+	log.Info.Println("ID - ", dataStruct.ID)
+	log.Info.Println("ExecCommand - ", dataStruct.ExecCommand)
 	if Validate(dataStruct) == false {
 		MsgErr := "INVALID VALIDATE!"
 		w.WriteHeader(http.StatusForbidden)
 		w.Write([]byte(MsgErr))
-		WarningLogger.Println(MsgErr)
+		log.Warn.Println(MsgErr)
 		return
 	}
 	go Native(dataStruct)
 	w.Write([]byte("OK"))
-}
-
-func IsUrl(str string) bool {
-	u, err := url.Parse(str)
-	return err == nil && u.Scheme != "" && u.Host != ""
-}
-
-func TestAfterStart() bool {
-	InfoLogger.Println("Test after start - starting.")
-	file, err := os.Create(WKSetings.FileExecute)
-	if err != nil {
-		tmp := "Unable to create exetuable file. Path: " + WKSetings.FileExecute + ". Shutdown webhook..."
-		fmt.Println(tmp)
-		ErrorLogger.Fatalln(tmp, err)
-		return false
-	}
-	file.WriteString("TEST STRING")
-	file.Close()
-	err = os.Chmod(WKSetings.FileExecute, 0700)
-	if err != nil {
-		ErrorLogger.Println(err)
-		return false
-	}
-	err = os.Remove(WKSetings.FileExecute)
-	if err != nil {
-		ErrorLogger.Println(err)
-		return false
-	}
-	if WKSetings.SecretToken == "" {
-		fmt.Println("Args SecretToken not used. Exit.")
-		ErrorLogger.Fatal("Args SecretToken not used. Exit.")
-	}
-	if WKSetings.HTTPSectretURL == "" {
-		fmt.Println("Args HTTPSecret not used. Exit.")
-		ErrorLogger.Fatal("Args HTTPSecret not used. Exit.")
-	}
-	if WKSetings.URLServer == "" {
-		fmt.Println("Args URL not used. Exit.")
-		ErrorLogger.Fatal("Args URL not used. Exit.")
-	}
-	if IsUrl(WKSetings.URLServer) == false {
-		fmt.Println("Error validate URL - ", WKSetings.URLServer)
-		ErrorLogger.Fatal("Error validate URL - ", WKSetings.URLServer)
-	}
-	if IsExistsURL(WKSetings.URLServer) == false {
-		fmt.Println("URL is not exist - ", WKSetings.URLServer)
-		os.Exit(1)
-	}
-	return true
 }
 
 func main() {
@@ -352,29 +244,32 @@ func main() {
 	flag.Parse()
 	file, err := os.Open(*ConfFile)
 	if err != nil {
-		log.Println(err)
-		log.Fatalln("Error open conf file -", *ConfFile)
+		fmt.Println(err)
+		fmt.Println("Error open conf file -", *ConfFile)
+		os.Exit(1)
 	}
 	defer file.Close()
 	decoder := json.NewDecoder(file)
-	err = decoder.Decode(&WKSetings)
+	err = decoder.Decode(&vars.WKSetings)
 	if err != nil {
-		log.Fatalln("error:", err)
+		fmt.Println("error:", err)
+		os.Exit(1)
 	}
-	WKSetings.Version = "v0.0.9"
-	LogFunc()
+	vars.WKSetings.Version = "v0.0.9"
+	log.LogPath = vars.WKSetings.LogPath
+	log.LogFunc()
 
-	if TestAfterStart() {
+	if utils.TestAfterStart() {
 		mux := http.NewServeMux()
 		mux.HandleFunc("/execute", ExecuteCommand)
 		mux.HandleFunc("/healtcheak", HealtCheak)
-		ServerAddress := ":" + fmt.Sprint(WKSetings.Port)
-		InfoLogger.Println("Startup on ", ServerAddress)
+		ServerAddress := ":" + fmt.Sprint(vars.WKSetings.Port)
+		log.Info.Println("Startup on ", ServerAddress)
 		fmt.Println("Startup on ", ServerAddress)
 		error := http.ListenAndServe(ServerAddress, mux)
-		ErrorLogger.Println(error)
+		log.Error.Println(error)
 	} else {
 		fmt.Println("Error test after start.")
-		ErrorLogger.Fatalln("Error test after start.")
+		log.Error.Fatalln("Error test after start.")
 	}
 }
