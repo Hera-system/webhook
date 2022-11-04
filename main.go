@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"os/user"
 	"time"
 )
 
@@ -94,7 +95,29 @@ func saveToFile(dataStruct CMD) bool {
 }
 
 func IsExistsURL(URL string) bool {
-	_, err := http.Head(URL)
+	type InitSend struct {
+		HostName string `json:"HostName"`
+		UserName string `json:"UserName"`
+	}
+	var (
+		DataSend InitSend
+	)
+	hostname, err := os.Hostname()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	DataSend.HostName = hostname
+	currentUser, err := user.Current()
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
+	DataSend.UserName = currentUser.Username
+	JsonData, err := json.Marshal(DataSend)
+	if err != nil {
+		ErrorLogger.Println(err)
+	}
+	_, err = http.Post(URL, "application/json", bytes.NewBuffer(JsonData))
 	if err != nil {
 		ErrorLogger.Println("URL is not exist. URL: ", URL)
 		return false
@@ -104,12 +127,12 @@ func IsExistsURL(URL string) bool {
 
 func sendResult(data string, dataStruct CMD, Error bool, Stdout string, Stderr string) bool {
 	response := dataResponse{ID: dataStruct.ID, Error: Error, Token: dataStruct.Token, Message: data, Stderr: Stderr, Stdout: Stdout}
-	json_data, err := json.Marshal(response)
+	JsonData, err := json.Marshal(response)
 	if err != nil {
 		ErrorLogger.Println(err)
 	}
 	if IsExistsURL(WKSetings.URLServer) {
-		resp, err := http.Post(WKSetings.URLServer, "application/json", bytes.NewBuffer(json_data))
+		resp, err := http.Post(WKSetings.URLServer, "application/json", bytes.NewBuffer(JsonData))
 		if err != nil {
 			ErrorLogger.Println("An Error Occurred ", err)
 		}
