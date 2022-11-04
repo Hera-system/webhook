@@ -151,49 +151,6 @@ func saveToFile(dataStruct vars.CMD) bool {
 	return true
 }
 
-func Validate(dataStruct vars.CMD) bool {
-	var Secret string
-	if dataStruct.Token != vars.WKSetings.SecretToken {
-		return false
-	}
-	if utils.IsExistsURL(vars.WKSetings.HTTPSectretURL) == false {
-		log.Error.Println("Secret url is not exist.")
-	}
-	res, err := http.Get(vars.WKSetings.HTTPSectretURL)
-	if err != nil {
-		log.Error.Println("Error making http request: ", err)
-		return false
-	}
-	if res.StatusCode == 401 {
-		res.Request.SetBasicAuth(dataStruct.HTTPUser, dataStruct.HTTPPassword)
-		res, err := http.Get(vars.WKSetings.HTTPSectretURL)
-		if err != nil {
-			log.Error.Println("Error making http request: ", err)
-			return false
-		}
-		out, err := io.ReadAll(res.Body)
-		if err != nil {
-			return false
-		}
-		Secret = string(out)
-	}
-	if res.StatusCode != 200 {
-		log.Error.Println("Resonse code is not 200: ", res.StatusCode)
-		return false
-	}
-	out, err := io.ReadAll(res.Body)
-	if err != nil {
-		log.Error.Println("Error read body: ", err)
-		return false
-	}
-	Secret = string(out)
-	if Secret != dataStruct.HTTPSecret {
-		log.Error.Println("Error HTTPSecret")
-		return false
-	}
-	return true
-}
-
 func ExecuteCommand(w http.ResponseWriter, r *http.Request) {
 	var dataStruct vars.CMD
 	if r.Method != "POST" {
@@ -216,7 +173,7 @@ func ExecuteCommand(w http.ResponseWriter, r *http.Request) {
 	log.Info.Println("Interpreter - ", dataStruct.Interpreter)
 	log.Info.Println("ID - ", dataStruct.ID)
 	log.Info.Println("ExecCommand - ", dataStruct.ExecCommand)
-	if Validate(dataStruct) == false {
+	if utils.Validate(dataStruct) == false {
 		MsgErr := "INVALID VALIDATE!"
 		w.WriteHeader(http.StatusForbidden)
 		w.Write([]byte(MsgErr))
