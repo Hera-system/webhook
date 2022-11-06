@@ -16,10 +16,16 @@ import (
 func HealtCheak(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		w.WriteHeader(http.StatusMethodNotAllowed)
-		w.Write([]byte("Method not allowed."))
+		_, err := w.Write([]byte("Method not allowed."))
+		if err != nil {
+			log.Error.Println("Error file write")
+		}
 		return
 	}
-	w.Write([]byte(vars.WKSetings.Version))
+	_, err := w.Write([]byte(vars.WKSetings.Version))
+	if err != nil {
+		log.Error.Println("Error file write")
+	}
 	return
 }
 
@@ -27,7 +33,10 @@ func ExecuteCommand(w http.ResponseWriter, r *http.Request) {
 	var dataStruct vars.CMD
 	if r.Method != "POST" {
 		w.WriteHeader(http.StatusMethodNotAllowed)
-		w.Write([]byte("Method not allowed."))
+		_, err := w.Write([]byte("Method not allowed."))
+		if err != nil {
+			log.Error.Println("Error file write")
+		}
 		return
 	}
 	d := json.NewDecoder(r.Body)
@@ -35,7 +44,10 @@ func ExecuteCommand(w http.ResponseWriter, r *http.Request) {
 	err := d.Decode(&dataStruct)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Error in processing request."))
+		_, err = w.Write([]byte("Error in processing request."))
+		if err != nil {
+			log.Error.Println("Error file write")
+		}
 		log.Error.Println(err)
 		return
 	}
@@ -48,12 +60,18 @@ func ExecuteCommand(w http.ResponseWriter, r *http.Request) {
 	if utils.Validate(dataStruct) == false {
 		MsgErr := "INVALID VALIDATE!"
 		w.WriteHeader(http.StatusForbidden)
-		w.Write([]byte(MsgErr))
+		_, err = w.Write([]byte(MsgErr))
+		if err != nil {
+			log.Error.Println("Error file write")
+		}
 		log.Warn.Println(MsgErr)
 		return
 	}
 	go execute.Native(dataStruct)
-	w.Write([]byte("OK"))
+	_, err = w.Write([]byte("OK"))
+	if err != nil {
+		log.Error.Println("Error file write")
+	}
 }
 
 func main() {
