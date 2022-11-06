@@ -26,7 +26,6 @@ func HealtCheak(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Error.Println("Error file write")
 	}
-	return
 }
 
 func ExecuteCommand(w http.ResponseWriter, r *http.Request) {
