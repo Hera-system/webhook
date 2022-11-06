@@ -151,3 +151,74 @@ func Validate(dataStruct vars.CMD) bool {
 	}
 	return true
 }
+
+func SendResult(data string, dataStruct vars.CMD, Error bool, Stdout string, Stderr string) bool {
+	type dataResponse struct {
+		Error   bool   `json:"Error"`
+		ID      string `json:"ID"`
+		Token   string `json:"Token"`
+		Stdout  string `json:"Stdout"`
+		Stderr  string `json:"Stderr"`
+		Message string `json:"Message"`
+	}
+	response := dataResponse{ID: dataStruct.ID, Error: Error, Token: dataStruct.Token, Message: data, Stderr: Stderr, Stdout: Stdout}
+	JsonData, err := json.Marshal(response)
+	if err != nil {
+		log.Error.Println(err)
+	}
+	if IsExistsURL(vars.WKSetings.URLServer) {
+		resp, err := http.Post(vars.WKSetings.URLServer, "application/json", bytes.NewBuffer(JsonData))
+		if err != nil {
+			log.Error.Println("An Error Occurred ", err)
+		}
+		if resp.StatusCode == 200 {
+			return true
+		}
+		log.Error.Println("Status code != 200. Status code is ", resp.StatusCode)
+		log.Error.Println("Error ID - ", response.ID)
+	}
+	return false
+}
+
+func SaveToFile(dataStruct vars.CMD) bool {
+	file, err := os.Create(vars.WKSetings.FileExecute)
+	if err != nil {
+		tmp := "Unable to create exetuable file. Path: " + vars.WKSetings.FileExecute + ". Shutdown webhook..."
+		fmt.Println(tmp)
+		SendResult(tmp, dataStruct, true, "", "")
+		log.Error.Fatalln(tmp, err)
+		return false
+	}
+	file.WriteString(dataStruct.Shebang + "\n")
+	file.WriteString(dataStruct.ExecCommand)
+	file.Close()
+	err = os.Chmod(vars.WKSetings.FileExecute, 0700)
+	if err != nil {
+		log.Error.Println(err)
+		return false
+	}
+	return true
+}
+
+func CopyAndCapture(w io.Writer, r io.Reader) ([]byte, error) {
+	var out []byte
+	buf := make([]byte, 1024, 1024)
+	for {
+		n, err := r.Read(buf[:])
+		if n > 0 {
+			d := buf[:n]
+			out = append(out, d...)
+			_, err := w.Write(d)
+			if err != nil {
+				return out, err
+			}
+		}
+		if err != nil {
+			// Read returns io.EOF at the end of file, which is not an error for us
+			if err == io.EOF {
+				err = nil
+			}
+			return out, err
+		}
+	}
+}
