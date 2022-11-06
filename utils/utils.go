@@ -102,11 +102,11 @@ func TestAfterStart() bool {
 		fmt.Println("Args URL not used. Exit.")
 		log.Error.Fatal("Args URL not used. Exit.")
 	}
-	if IsUrl(vars.WKSetings.URLServer) == false {
+	if !IsUrl(vars.WKSetings.URLServer) {
 		fmt.Println("Error validate URL - ", vars.WKSetings.URLServer)
 		log.Error.Fatal("Error validate URL - ", vars.WKSetings.URLServer)
 	}
-	if IsExistsURL(vars.WKSetings.URLServer) == false {
+	if !IsExistsURL(vars.WKSetings.URLServer) {
 		fmt.Println("URL is not exist - ", vars.WKSetings.URLServer)
 		os.Exit(1)
 	}
@@ -118,7 +118,7 @@ func Validate(dataStruct vars.CMD) bool {
 	if dataStruct.Token != vars.WKSetings.SecretToken {
 		return false
 	}
-	if IsExistsURL(vars.WKSetings.HTTPSectretURL) == false {
+	if !IsExistsURL(vars.WKSetings.HTTPSectretURL) {
 		log.Error.Println("Secret url is not exist.")
 	}
 	res, err := http.Get(vars.WKSetings.HTTPSectretURL)
