@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"os/user"
+	"strconv"
 
 	"github.com/hera-system/webhook/internal/log"
 	"github.com/hera-system/webhook/internal/vars"
@@ -52,11 +53,21 @@ func IsExistsURL(URL string) bool {
 	if err != nil {
 		log.Error.Println(err)
 	}
-	_, err = http.Post(URL, "application/json", bytes.NewBuffer(JsonData))
+	resp, err := http.Post(URL, "application/json", bytes.NewBuffer(JsonData))
 	if err != nil {
 		log.Error.Println("URL is not exist. URL: ", URL)
 		return false
 	}
+	if resp.StatusCode != 200 {
+		log.Error.Println("Error send POST request to URL: " + URL + ". Status code: " + strconv.Itoa(resp.StatusCode))
+		out, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return false
+		}
+		log.Error.Println(string(out))
+		return false
+	}
+
 	return true
 }
 
