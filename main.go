@@ -89,7 +89,7 @@ func main() {
 		fmt.Println("error:", err)
 		os.Exit(1)
 	}
-	vars.WKSetings.Version = "v0.0.9"
+	vars.WKSetings.Version = "v1.0.0"
 	log.LogPath = vars.WKSetings.LogPath
 	log.LogFunc()
 
