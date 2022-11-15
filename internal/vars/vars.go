@@ -8,6 +8,8 @@ type WebhookSetings struct {
 	FileExecute    string `json:"FileExecute"`
 	SecretToken    string `json:"SecretToken"`
 	HTTPSectretURL string `json:"HTTPSectretURL"`
+	UniqName       string `json:"UniqName"`
+	WebhookURL     string `json:"WebhookURL"`
 }
 
 type CMD struct {

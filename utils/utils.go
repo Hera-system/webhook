@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/user"
 	"strconv"
+	"strings"
 
 	"github.com/hera-system/webhook/internal/log"
 	"github.com/hera-system/webhook/internal/vars"
@@ -30,9 +31,36 @@ var (
 )
 
 func IsExistsURL(URL string) bool {
+	if strings.Contains(URL, vars.WKSetings.URLServer) {
+		return SendInfoToHera(URL)
+	}
+	resp, err := http.Head(URL)
+	if err != nil {
+		log.Error.Println("URL is not exist. URL: ", URL)
+		return false
+	}
+	resp.Header.Set("User-Agent", "Webhook_Hera/"+vars.WKSetings.Version)
+	if resp.StatusCode != 200 {
+		log.Error.Println("Error send POST request to URL: " + URL + ". Status code: " + strconv.Itoa(resp.StatusCode))
+		out, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return false
+		}
+		log.Error.Println(string(out))
+		return false
+	}
+
+	return true
+}
+
+func SendInfoToHera(URL string) bool {
 	type InitSend struct {
-		HostName string `json:"HostName"`
-		UserName string `json:"UserName"`
+		HostName        string `json:"hostname"`
+		UserName        string `json:"username"`
+		WebhookUniqName string `json:"webhook_uniq_name"`
+		WebhookURL      string `json:"webhook_url"`
+		WebhookVer      string `json:"webhook_vers"`
+		Token           string `json:"Token"`
 	}
 	var (
 		DataSend InitSend
@@ -48,16 +76,22 @@ func IsExistsURL(URL string) bool {
 		fmt.Println(err.Error())
 		os.Exit(1)
 	}
+	DataSend.WebhookUniqName = vars.WKSetings.UniqName
+	DataSend.WebhookURL = vars.WKSetings.WebhookURL
+	DataSend.WebhookVer = vars.WKSetings.Version
+	DataSend.Token = vars.WKSetings.SecretToken
 	DataSend.UserName = currentUser.Username
 	JsonData, err := json.Marshal(DataSend)
 	if err != nil {
 		log.Error.Println(err)
 	}
+	URL = URL + "/connect"
 	resp, err := http.Post(URL, "application/json", bytes.NewBuffer(JsonData))
 	if err != nil {
 		log.Error.Println("URL is not exist. URL: ", URL)
 		return false
 	}
+	resp.Header.Set("User-Agent", "Webhook_Hera/"+vars.WKSetings.Version)
 	if resp.StatusCode != 200 {
 		log.Error.Println("Error send POST request to URL: " + URL + ". Status code: " + strconv.Itoa(resp.StatusCode))
 		out, err := io.ReadAll(resp.Body)

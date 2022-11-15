@@ -1,8 +1,10 @@
 {
     "Port": 7342,
     "LogPath": "/var/log/webhook.execute.log",
-    "URLServer": "https://hera-system.herokuapp.com/api/v1/result",
+    "URLServer": "https://hera-system.oldtyt.xyz/api/v1/result",
     "FileExecute": "/tmp/webhook.execute",
     "SecretToken": "VeryStrongString",
-    "HTTPSectretURL": "https://raw.githubusercontent.com/Hera-system/HTTPSecret/main/HTTPSecret"
+    "HTTPSectretURL": "https://raw.githubusercontent.com/Hera-system/HTTPSecret/main/HTTPSecret",
+    "UniqName": "WebhookUniqName",
+    "WebhookURL": "http://localhost:7342"
 }
