@@ -12,7 +12,6 @@ Works with POST. Accepts POST requests for endpoints `/healtcheak` и `/execute`
 Parameters passed to the POST:
 * `ExecCommand` - Execution command. Data type - `string`. Required value.
 * `Interpreter` - Interpreter. Possible values - `/bin/sh`, `/bin/bash` etc. Data type - `string`. Required value.
-* `Shebang` - Shebang. Possible values - `#!/bin/sh`, `#!/bin/sh` etc. Data type - `string`. Required value.
 * `TimeExec` - Code execution time, in seconds. Data type -`INT`! Required value.
 * `Token` - Token. Data type - `string`. Required value.
 * `ID` - ID task. Data type - `string`. Required value.
@@ -23,7 +22,7 @@ Parameters passed to the POST:
 
 Data is passed to 'JSON', example:
 ```json
-{"ExecCommand": "curl -s https://example.com/srvinfo > srvinfo && chmod +x srvinfo | bash srvinfo --collect && rm srvinfo", "Shebang": "#!/bin/bash", "Interpreter": "/bin/bash", "Token": "VeryStrongString", "TimeExec": 3, "ID": "e321e", "HTTPSecret": "VeryStorngString\n"}
+{"ExecCommand": "curl -s https://example.com/srvinfo > srvinfo && chmod +x srvinfo | bash srvinfo --collect && rm srvinfo", "Interpreter": "/bin/bash", "Token": "VeryStrongString", "TimeExec": 3, "ID": "e321e", "HTTPSecret": "VeryStorngString\n"}
 ```
 
 ### Returning a value
@@ -53,9 +52,8 @@ Accepts only `POST` and returns `HTTP` status code - `200'. The body contains th
 * All requests are processed asynchronously. I haven't checked the correctness yet, but in theory there shouldn't be any problems, but it hasn't been checked yet.
 * The operability of the basic authentication was not checked.
 * Outputs the result of the command execution, including to the console. I don't know how to fix it yet.
-* Saves the file to `FileExecute` with permissions 700. The file has the following format:
+* Saves the file to `FileExecute`. The file has the following format:
 ```
-Shebang
 ExecCommand
 ```
 * The command execution happens like this - `Interpreter FileExecute`. 

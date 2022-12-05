@@ -245,11 +245,6 @@ func SaveToFile(dataStruct vars.CMD) bool {
 		log.Error.Fatalln(tmp, err)
 		return false
 	}
-	_, err = file.WriteString(dataStruct.Shebang + "\n")
-	if err != nil {
-		log.Error.Println("Error file write")
-		return false
-	}
 	_, err = file.WriteString(dataStruct.ExecCommand)
 	if err != nil {
 		log.Error.Println("Error file write")

@@ -51,7 +51,6 @@ func ExecuteCommand(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Info.Println("From IP - ", r.RemoteAddr)
-	log.Info.Println("Shebang - ", dataStruct.Shebang)
 	log.Info.Println("TimeExec - ", dataStruct.TimeExec)
 	log.Info.Println("Interpreter - ", dataStruct.Interpreter)
 	log.Info.Println("ID - ", dataStruct.ID)
