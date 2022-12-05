@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"os/user"
+	"runtime"
 	"strconv"
 	"strings"
 
@@ -60,6 +61,9 @@ func SendInfoToHera(URL string) bool {
 		WebhookUniqName string `json:"webhook_uniq_name"`
 		WebhookURL      string `json:"webhook_url"`
 		WebhookVer      string `json:"webhook_vers"`
+		OSType          string `json:"os_type"`
+		OSArch          string `json:"os_arch"`
+		CPUCore         int    `json:"cpu_core"`
 		Token           string `json:"Token"`
 	}
 	var (
@@ -76,6 +80,9 @@ func SendInfoToHera(URL string) bool {
 		fmt.Println(err.Error())
 		os.Exit(1)
 	}
+	DataSend.CPUCore = runtime.NumCPU()
+	DataSend.OSType = runtime.GOOS
+	DataSend.OSArch = runtime.GOARCH
 	DataSend.WebhookUniqName = vars.WKSetings.UniqName
 	DataSend.WebhookURL = vars.WKSetings.WebhookURL
 	DataSend.WebhookVer = vars.Version

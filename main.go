@@ -74,7 +74,7 @@ func ExecuteCommand(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	ConfFile := flag.String("conf", "config.json", "Path to conf file.")
+	ConfFile := flag.String("config", "config.json", "Path to conf file.")
 	flag.Parse()
 	file, err := os.Open(*ConfFile)
 	if err != nil {
