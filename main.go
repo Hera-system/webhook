@@ -22,7 +22,7 @@ func HealtCheak(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	_, err := w.Write([]byte(vars.WKSetings.Version))
+	_, err := w.Write([]byte(vars.Version))
 	if err != nil {
 		log.Error.Println("Error file write")
 	}
@@ -89,7 +89,6 @@ func main() {
 		fmt.Println("error:", err)
 		os.Exit(1)
 	}
-	vars.WKSetings.Version = "v1.0.1"
 	log.LogPath = vars.WKSetings.LogPath
 	log.LogFunc()
 

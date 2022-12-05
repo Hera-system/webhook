@@ -39,7 +39,7 @@ func IsExistsURL(URL string) bool {
 		log.Error.Println("URL is not exist. URL: ", URL)
 		return false
 	}
-	resp.Header.Set("User-Agent", "Webhook_Hera/"+vars.WKSetings.Version)
+	resp.Header.Set("User-Agent", "Webhook_Hera/"+vars.Version)
 	if resp.StatusCode != 200 {
 		log.Error.Println("Error send POST request to URL: " + URL + ". Status code: " + strconv.Itoa(resp.StatusCode))
 		out, err := io.ReadAll(resp.Body)
@@ -78,7 +78,7 @@ func SendInfoToHera(URL string) bool {
 	}
 	DataSend.WebhookUniqName = vars.WKSetings.UniqName
 	DataSend.WebhookURL = vars.WKSetings.WebhookURL
-	DataSend.WebhookVer = vars.WKSetings.Version
+	DataSend.WebhookVer = vars.Version
 	DataSend.Token = vars.WKSetings.SecretToken
 	DataSend.UserName = currentUser.Username
 	JsonData, err := json.Marshal(DataSend)
@@ -91,7 +91,7 @@ func SendInfoToHera(URL string) bool {
 		log.Error.Println("URL is not exist. URL: ", URL)
 		return false
 	}
-	resp.Header.Set("User-Agent", "Webhook_Hera/"+vars.WKSetings.Version)
+	resp.Header.Set("User-Agent", "Webhook_Hera/"+vars.Version)
 	if resp.StatusCode != 200 {
 		log.Error.Println("Error send POST request to URL: " + URL + ". Status code: " + strconv.Itoa(resp.StatusCode))
 		out, err := io.ReadAll(resp.Body)

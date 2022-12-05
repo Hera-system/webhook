@@ -3,7 +3,6 @@ package vars
 type WebhookSetings struct {
 	Port           int    `json:"Port"`
 	LogPath        string `json:"LogPath"`
-	Version        string `json:"version"`
 	URLServer      string `json:"URLServer"`
 	FileExecute    string `json:"FileExecute"`
 	SecretToken    string `json:"SecretToken"`
@@ -27,3 +26,5 @@ type CMD struct {
 var (
 	WKSetings WebhookSetings
 )
+
+const Version string = "v1.0.2"
