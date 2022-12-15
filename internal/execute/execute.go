@@ -18,7 +18,7 @@ func Native(dataStruct vars.CMD) string {
 		cmd := exec.Command(dataStruct.Interpreter, vars.WKSetings.FileExecute)
 		stdoutIn, _ := cmd.StdoutPipe()
 		if err := cmd.Start(); err != nil {
-			log.Error.Println(err)
+			log.Error.Println(err.Error())
 		}
 		done := make(chan error, 1)
 		go func() {
@@ -48,7 +48,7 @@ func Native(dataStruct vars.CMD) string {
 		}
 		err := os.Remove(vars.WKSetings.FileExecute)
 		if err != nil {
-			log.Error.Println(err)
+			log.Error.Println(err.Error())
 		}
 		if errStdout != nil || errStderr != nil {
 			log.Error.Println("failed to capture stdout or stderr")

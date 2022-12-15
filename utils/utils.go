@@ -71,13 +71,13 @@ func SendInfoToHera(URL string) bool {
 	)
 	hostname, err := os.Hostname()
 	if err != nil {
-		fmt.Println(err)
+		log.Error.Println(err.Error())
 		os.Exit(1)
 	}
 	DataSend.HostName = hostname
 	currentUser, err := user.Current()
 	if err != nil {
-		fmt.Println(err.Error())
+		log.Error.Println(err.Error())
 		os.Exit(1)
 	}
 	DataSend.CPUCore = runtime.NumCPU()
@@ -90,7 +90,7 @@ func SendInfoToHera(URL string) bool {
 	DataSend.UserName = currentUser.Username
 	JsonData, err := json.Marshal(DataSend)
 	if err != nil {
-		log.Error.Println(err)
+		log.Error.Println(err.Error())
 	}
 	URL = URL + "/connect"
 	resp, err := http.Post(URL, "application/json", bytes.NewBuffer(JsonData))
@@ -134,7 +134,7 @@ func TestAfterStart() bool {
 	file.Close()
 	err = os.Remove(vars.WKSetings.FileExecute)
 	if err != nil {
-		log.Error.Println(err)
+		log.Error.Println(err.Error())
 		return false
 	}
 	if vars.WKSetings.SecretToken == "" {
@@ -215,7 +215,7 @@ func SendResult(data string, dataStruct vars.CMD, Error bool, Stdout string, Std
 	response := dataResponse{ID: dataStruct.ID, Error: Error, Token: dataStruct.Token, Message: data, Stderr: Stderr, Stdout: Stdout}
 	JsonData, err := json.Marshal(response)
 	if err != nil {
-		log.Error.Println(err)
+		log.Error.Println(err.Error())
 	}
 	if IsExistsURL(vars.WKSetings.URLServer) {
 		resp, err := http.Post(vars.WKSetings.URLServer, "application/json", bytes.NewBuffer(JsonData))
@@ -248,7 +248,7 @@ func SaveToFile(dataStruct vars.CMD) bool {
 	file.Close()
 	err = os.Chmod(vars.WKSetings.FileExecute, 0700)
 	if err != nil {
-		log.Error.Println(err)
+		log.Error.Println(err.Error())
 		return false
 	}
 	return true

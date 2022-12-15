@@ -47,7 +47,7 @@ func ExecuteCommand(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Error.Println("Error file write")
 		}
-		log.Error.Println(err)
+		log.Error.Println(err.Error())
 		return
 	}
 	log.Info.Println("From IP - ", r.RemoteAddr)
@@ -58,6 +58,7 @@ func ExecuteCommand(w http.ResponseWriter, r *http.Request) {
 	if utils.Valid(dataStruct) {
 		_, err = w.Write([]byte("OK"))
 		if err != nil {
+			log.Info.Println(err.Error())
 			log.Error.Println("Error file write")
 		}
 		go execute.Native(dataStruct)
