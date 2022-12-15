@@ -132,11 +132,6 @@ func TestAfterStart() bool {
 		return false
 	}
 	file.Close()
-	// err = os.Chmod(vars.WKSetings.FileExecute, 0700)
-	// if err != nil {
-	// 	log.Error.Println(err)
-	// 	return false
-	// }
 	err = os.Remove(vars.WKSetings.FileExecute)
 	if err != nil {
 		log.Error.Println(err)

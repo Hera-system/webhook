@@ -1,6 +1,6 @@
 {
     "Port": 7342,
-    "LogPath": "/tmp/webhook.execute.log",
+    "LogPath": "/dev/stdout",
     "URLServer": "http://site:9997/api/v1/result",
     "FileExecute": "/tmp/webhook.execute",
     "SecretToken": "VeryStrongString",

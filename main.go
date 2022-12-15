@@ -65,11 +65,11 @@ func ExecuteCommand(w http.ResponseWriter, r *http.Request) {
 		log.Warn.Println(MsgErr)
 		return
 	}
-	go execute.Native(dataStruct)
 	_, err = w.Write([]byte("OK"))
 	if err != nil {
 		log.Error.Println("Error file write")
 	}
+	go execute.Native(dataStruct)
 }
 
 func main() {
