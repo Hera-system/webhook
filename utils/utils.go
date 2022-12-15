@@ -160,48 +160,48 @@ func TestAfterStart() bool {
 	return true
 }
 
-func Valid(dataStruct vars.CMD) bool {
-	var Secret string
-	if dataStruct.Token != vars.WKSetings.SecretToken {
-		return false
-	}
-	if !IsExistsURL(vars.WKSetings.HTTPSectretURL) {
-		log.Error.Println("Secret url is not exist.")
-	}
-	res, err := http.Get(vars.WKSetings.HTTPSectretURL)
-	if err != nil {
-		log.Error.Println("Error making http request: ", err)
-		return false
-	}
-	if res.StatusCode == 401 {
-		res.Request.SetBasicAuth(dataStruct.HTTPUser, dataStruct.HTTPPassword)
-		res, err := http.Get(vars.WKSetings.HTTPSectretURL)
-		if err != nil {
-			log.Error.Println("Error making http request: ", err)
-			return false
-		}
-		out, err := io.ReadAll(res.Body)
-		if err != nil {
-			return false
-		}
-		Secret = string(out)
-	}
-	if res.StatusCode != 200 {
-		log.Error.Println("Resonse code is not 200: ", res.StatusCode)
-		return false
-	}
-	out, err := io.ReadAll(res.Body)
-	if err != nil {
-		log.Error.Println("Error read body: ", err)
-		return false
-	}
-	Secret = string(out)
-	if Secret != dataStruct.HTTPSecret {
-		log.Error.Println("Error HTTPSecret")
-		return false
-	}
-	return true
-}
+// func Valid(dataStruct vars.CMD) bool {
+// 	var Secret string
+// 	if dataStruct.Token != vars.WKSetings.SecretToken {
+// 		return false
+// 	}
+// 	if !IsExistsURL(vars.WKSetings.HTTPSectretURL) {
+// 		log.Error.Println("Secret url is not exist.")
+// 	}
+// 	res, err := http.Get(vars.WKSetings.HTTPSectretURL)
+// 	if err != nil {
+// 		log.Error.Println("Error making http request: ", err)
+// 		return false
+// 	}
+// 	if res.StatusCode == 401 {
+// 		res.Request.SetBasicAuth(dataStruct.HTTPUser, dataStruct.HTTPPassword)
+// 		res, err := http.Get(vars.WKSetings.HTTPSectretURL)
+// 		if err != nil {
+// 			log.Error.Println("Error making http request: ", err)
+// 			return false
+// 		}
+// 		out, err := io.ReadAll(res.Body)
+// 		if err != nil {
+// 			return false
+// 		}
+// 		Secret = string(out)
+// 	}
+// 	if res.StatusCode != 200 {
+// 		log.Error.Println("Resonse code is not 200: ", res.StatusCode)
+// 		return false
+// 	}
+// 	out, err := io.ReadAll(res.Body)
+// 	if err != nil {
+// 		log.Error.Println("Error read body: ", err)
+// 		return false
+// 	}
+// 	Secret = string(out)
+// 	if Secret != dataStruct.HTTPSecret {
+// 		log.Error.Println("Error HTTPSecret")
+// 		return false
+// 	}
+// 	return true
+// }
 
 func SendResult(data string, dataStruct vars.CMD, Error bool, Stdout string, Stderr string) bool {
 	type dataResponse struct {

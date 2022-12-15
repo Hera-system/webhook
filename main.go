@@ -61,26 +61,6 @@ func ExecuteCommand(w http.ResponseWriter, r *http.Request) {
 		log.Error.Println("Error file write")
 	}
 	go execute.Native(dataStruct)
-	return
-	if utils.Valid(dataStruct) {
-		log.Info.Println("Command is valid")
-		_, err = w.Write([]byte("OK"))
-		if err != nil {
-			log.Info.Println(err.Error())
-			log.Error.Println("Error file write")
-		}
-		go execute.Native(dataStruct)
-		return
-	}
-	log.Info.Println("Command is't valid")
-	MsgErr := "INVALID VALIDATE!"
-	fmt.Println(MsgErr)
-	w.WriteHeader(http.StatusForbidden)
-	_, err = w.Write([]byte(MsgErr))
-	if err != nil {
-		log.Error.Println("Error file write")
-	}
-	log.Warn.Println(MsgErr)
 }
 
 func main() {
