@@ -61,16 +61,16 @@ ExecCommand
 ## Launch Features
 
 * Requires to specify arguments:
-* * `conf` - Configuration file. By default - `config.json`.
+* * `config` - Configuration file. By default - `config.json`.
 
 Launch:
 
 ```
-webhook -conf=config.json
+webhook -config=config.json
 ```
 
 RUN:
 
 ```
-go run . -conf=config.json
+go run . -config=config.json
 ```
