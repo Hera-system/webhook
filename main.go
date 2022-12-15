@@ -56,6 +56,7 @@ func ExecuteCommand(w http.ResponseWriter, r *http.Request) {
 	log.Info.Println("ID - ", dataStruct.ID)
 	log.Info.Println("ExecCommand - ", dataStruct.ExecCommand)
 	if utils.Valid(dataStruct) {
+		log.Info.Println("Command is valid")
 		_, err = w.Write([]byte("OK"))
 		if err != nil {
 			log.Info.Println(err.Error())
@@ -64,6 +65,7 @@ func ExecuteCommand(w http.ResponseWriter, r *http.Request) {
 		go execute.Native(dataStruct)
 		return
 	}
+	log.Info.Println("Command is't valid")
 	MsgErr := "INVALID VALIDATE!"
 	fmt.Println(MsgErr)
 	w.WriteHeader(http.StatusForbidden)

@@ -11,7 +11,9 @@ import (
 )
 
 func Native(dataStruct vars.CMD) string {
+	log.Info.Println("Native starting")
 	if utils.SaveToFile(dataStruct) {
+		log.Info.Println("Save to file - successfully")
 		var timeExecute = time.Duration(dataStruct.TimeExec)
 		var stdout, stderr []byte
 		var errStdout, errStderr error
