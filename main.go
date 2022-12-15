@@ -55,21 +55,22 @@ func ExecuteCommand(w http.ResponseWriter, r *http.Request) {
 	log.Info.Println("Interpreter - ", dataStruct.Interpreter)
 	log.Info.Println("ID - ", dataStruct.ID)
 	log.Info.Println("ExecCommand - ", dataStruct.ExecCommand)
-	if !utils.Validate(dataStruct) {
-		MsgErr := "INVALID VALIDATE!"
-		w.WriteHeader(http.StatusForbidden)
-		_, err = w.Write([]byte(MsgErr))
+	if utils.Valid(dataStruct) {
+		_, err = w.Write([]byte("OK"))
 		if err != nil {
 			log.Error.Println("Error file write")
 		}
-		log.Warn.Println(MsgErr)
+		go execute.Native(dataStruct)
 		return
 	}
-	_, err = w.Write([]byte("OK"))
+	MsgErr := "INVALID VALIDATE!"
+	fmt.Println(MsgErr)
+	w.WriteHeader(http.StatusForbidden)
+	_, err = w.Write([]byte(MsgErr))
 	if err != nil {
 		log.Error.Println("Error file write")
 	}
-	go execute.Native(dataStruct)
+	log.Warn.Println(MsgErr)
 }
 
 func main() {

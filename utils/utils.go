@@ -160,7 +160,7 @@ func TestAfterStart() bool {
 	return true
 }
 
-func Validate(dataStruct vars.CMD) bool {
+func Valid(dataStruct vars.CMD) bool {
 	var Secret string
 	if dataStruct.Token != vars.WKSetings.SecretToken {
 		return false
