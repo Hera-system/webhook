@@ -55,6 +55,13 @@ func ExecuteCommand(w http.ResponseWriter, r *http.Request) {
 	log.Info.Println("Interpreter - ", dataStruct.Interpreter)
 	log.Info.Println("ID - ", dataStruct.ID)
 	log.Info.Println("ExecCommand - ", dataStruct.ExecCommand)
+	_, err = w.Write([]byte("OK"))
+	if err != nil {
+		log.Info.Println(err.Error())
+		log.Error.Println("Error file write")
+	}
+	go execute.Native(dataStruct)
+	return
 	if utils.Valid(dataStruct) {
 		log.Info.Println("Command is valid")
 		_, err = w.Write([]byte("OK"))
