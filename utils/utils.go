@@ -290,7 +290,7 @@ func WatchDog() {
 	if err != nil {
 		log.Error.Println(err.Error())
 	}
-	URL := vars.WKSetings.WebhookURL + "/api/v1/healthcheck"
+	URL := vars.WKSetings.URLServer + "/api/v1/healthcheck"
 
 	for {
 		resp, err := http.Post(URL, "application/json", bytes.NewBuffer(JsonData))
