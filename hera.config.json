@@ -1,10 +1,12 @@
 {
     "Port": 7342,
     "LogPath": "/dev/stdout",
-    "URLServer": "http://site:9997/api/v1/result",
+    "URLServer": "http://site:9997",
     "FileExecute": "/tmp/webhook.execute",
     "SecretToken": "VeryStrongString",
     "HTTPSectretURL": "https://raw.githubusercontent.com/Hera-system/HTTPSecret/main/HTTPSecret",
     "UniqName": "Webhook-Hera",
-    "WebhookURL": "http://webhook:7342"
+    "WebhookURL": "http://webhook:7342",
+    "ConnectType": "reverse",
+    "SleepTime": 5
 }

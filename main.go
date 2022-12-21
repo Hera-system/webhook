@@ -45,7 +45,7 @@ func ExecuteCommand(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		_, err = w.Write([]byte("Error in processing request."))
 		if err != nil {
-			log.Error.Println("Error file write")
+			log.Error.Println("Error sending request")
 		}
 		log.Error.Println(err.Error())
 		return
@@ -81,16 +81,20 @@ func main() {
 	}
 	log.LogPath = vars.WKSetings.LogPath
 	log.LogFunc()
-
 	if utils.TestAfterStart() {
-		mux := http.NewServeMux()
-		mux.HandleFunc("/execute", ExecuteCommand)
-		mux.HandleFunc("/healtcheak", HealtCheak)
-		ServerAddress := ":" + fmt.Sprint(vars.WKSetings.Port)
-		log.Info.Println("Startup on ", ServerAddress)
-		fmt.Println("Startup on ", ServerAddress)
-		error := http.ListenAndServe(ServerAddress, mux)
-		log.Error.Println(error)
+		if vars.WKSetings.ConnectType == "direct" {
+			mux := http.NewServeMux()
+			mux.HandleFunc("/execute", ExecuteCommand)
+			mux.HandleFunc("/healtcheak", HealtCheak)
+			ServerAddress := ":" + fmt.Sprint(vars.WKSetings.Port)
+			log.Info.Println("Startup on ", ServerAddress)
+			fmt.Println("Startup on ", ServerAddress)
+			error := http.ListenAndServe(ServerAddress, mux)
+			log.Error.Println(error)
+		}
+		if vars.WKSetings.ConnectType == "reverse" {
+			utils.WatchDog()
+		}
 	} else {
 		fmt.Println("Error test after start.")
 		log.Error.Fatalln("Error test after start.")

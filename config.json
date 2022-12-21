@@ -1,10 +1,12 @@
 {
     "Port": 7342,
     "LogPath": "/var/log/webhook.execute.log",
-    "URLServer": "https://hera-system.oldtyt.xyz/api/v1/result",
+    "URLServer": "https://hera-system.oldtyt.xyz",
     "FileExecute": "/tmp/webhook.execute",
     "SecretToken": "VeryStrongString",
     "HTTPSectretURL": "https://raw.githubusercontent.com/Hera-system/HTTPSecret/main/HTTPSecret",
     "UniqName": "WebhookUniqName",
-    "WebhookURL": "http://localhost:7342"
+    "WebhookURL": "http://localhost:7342",
+    "ConnectType": "direct",
+    "SleepTime": 0
 }

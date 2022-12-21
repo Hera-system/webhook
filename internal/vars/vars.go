@@ -9,6 +9,8 @@ type WebhookSetings struct {
 	HTTPSectretURL string `json:"HTTPSectretURL"`
 	UniqName       string `json:"UniqName"`
 	WebhookURL     string `json:"WebhookURL"`
+	ConnectType    string `json:"ConnectType"`
+	SleepTime      int    `json:"SleepTime"`
 }
 
 type CMD struct {

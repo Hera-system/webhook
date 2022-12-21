@@ -43,7 +43,7 @@ func Native(dataStruct vars.CMD) string {
 			if err != nil {
 				log.Error.Println("Process finished with error = ", err)
 				log.Error.Println("ID - ", dataStruct.ID)
-				utils.SendResult("Error, check args and logs.", dataStruct, true, string(stdout), string(stderr))
+				utils.SendResult("Error, check args and logs.", dataStruct, true, "", err.Error())
 				return ("Error, check args and logs. Error message: " + err.Error())
 			}
 			log.Info.Println("Process finished successfully")
@@ -53,9 +53,10 @@ func Native(dataStruct vars.CMD) string {
 			log.Error.Println(err.Error())
 		}
 		if errStdout != nil || errStderr != nil {
-			log.Error.Println("failed to capture stdout or stderr")
-			utils.SendResult("Failed to capture stdout or stderr.", dataStruct, true, "", "")
-			return "Failed to capture stdout or stderr."
+			TmpMsg := "Failed to capture stdout or stderr."
+			log.Error.Println(TmpMsg)
+			utils.SendResult(TmpMsg, dataStruct, true, "", "")
+			return TmpMsg
 		}
 		outStr, errStr := string(stdout), string(stderr)
 		log.Info.Println("Stdout: ", outStr)
