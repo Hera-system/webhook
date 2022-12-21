@@ -5,8 +5,8 @@
     "FileExecute": "/tmp/webhook.execute",
     "SecretToken": "VeryStrongString",
     "HTTPSectretURL": "https://raw.githubusercontent.com/Hera-system/HTTPSecret/main/HTTPSecret",
-    "UniqName": "Webhook-Hera",
-    "WebhookURL": "http://webhook:7342",
-    "ConnectType": "reverse",
-    "SleepTime": 5
+    "UniqName": "Hera-direct",
+    "WebhookURL": "http://webhook-direct:7342",
+    "ConnectType": "direct",
+    "SleepTime": 0
 }
