@@ -43,7 +43,7 @@ func Native(dataStruct vars.CMD) string {
 			if err != nil {
 				log.Error.Println("Process finished with error = ", err)
 				log.Error.Println("ID - ", dataStruct.ID)
-				utils.SendResult("Error, check args and logs.", dataStruct, true, "", "")
+				utils.SendResult("Error, check args and logs. Error message: "+err.Error(), dataStruct, true, "", "")
 				return ("Error, check args and logs.")
 			}
 			log.Info.Println("Process finished successfully")
