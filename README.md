@@ -16,8 +16,8 @@ Parameters passed to the POST:
 * `Token` - Token. Data type - `string`. Required value.
 * `ID` - ID task. Data type - `string`. Required value.
 * `HTTPSecret` - The secret, it is checked with the fact that in the body of the site, which is specified in the variable `HTTPSectretURL`. Data type - `string`. Required value.
-* `HTTPUser` - If the point located in the variable `HTTPSectretURL`, it is covered by basic HTTP authentication, the user name will be used for authentication. Data type - `string`. Optional value.
-* `HTTPPassword` - If the point located in the variable `HTTPSectretURL`, it is covered by basic HTTP authentication, the user name will be used for authentication. Data type - `string`. Required value.
+* `HTTPUser` - If the point located in the variable `HTTPSecretURL`, it is covered by basic HTTP authentication, the user name will be used for authentication. Data type - `string`. Optional value.
+* `HTTPPassword` - If the point located in the variable `HTTPSecretURL`, it is covered by basic HTTP authentication, the user name will be used for authentication. Data type - `string`. Required value.
 
 
 Data is passed to 'JSON', example:

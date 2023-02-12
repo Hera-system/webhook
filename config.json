@@ -4,7 +4,7 @@
     "URLServer": "https://hera-system.oldtyt.xyz",
     "FileExecute": "/tmp/webhook.execute",
     "SecretToken": "VeryStrongString",
-    "HTTPSectretURL": "https://raw.githubusercontent.com/Hera-system/HTTPSecret/main/HTTPSecret",
+    "HTTPSecretURL": "https://raw.githubusercontent.com/Hera-system/HTTPSecret/main/HTTPSecret",
     "UniqName": "WebhookUniqName",
     "WebhookURL": "http://localhost:7342",
     "ConnectType": "direct",

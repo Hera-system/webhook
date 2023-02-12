@@ -26,7 +26,7 @@ import (
 // 	URLServer      string `json:"URLServer"`
 // 	FileExecute    string `json:"FileExecute"`
 // 	SecretToken    string `json:"SecretToken"`
-// 	HTTPSectretURL string `json:"HTTPSectretURL"`
+// 	HTTPSecretURL string `json:"HTTPSecretURL"`
 // }
 
 // var (
@@ -145,7 +145,7 @@ func TestAfterStart() bool {
 		fmt.Println("Args SecretToken not used. Exit.")
 		log.Error.Fatal("Args SecretToken not used. Exit.")
 	}
-	if vars.WKSetings.HTTPSectretURL == "" {
+	if vars.WKSetings.HTTPSecretURL == "" {
 		fmt.Println("Args HTTPSecret not used. Exit.")
 		log.Error.Fatal("Args HTTPSecret not used. Exit.")
 	}

@@ -1,16 +1,16 @@
 package vars
 
 type WebhookSetings struct {
-	Port           int    `json:"Port"`
-	LogPath        string `json:"LogPath"`
-	URLServer      string `json:"URLServer"`
-	FileExecute    string `json:"FileExecute"`
-	SecretToken    string `json:"SecretToken"`
-	HTTPSectretURL string `json:"HTTPSectretURL"`
-	UniqName       string `json:"UniqName"`
-	WebhookURL     string `json:"WebhookURL"`
-	ConnectType    string `json:"ConnectType"`
-	SleepTime      int    `json:"SleepTime"`
+	Port          int    `json:"Port"`
+	LogPath       string `json:"LogPath"`
+	URLServer     string `json:"URLServer"`
+	FileExecute   string `json:"FileExecute"`
+	SecretToken   string `json:"SecretToken"`
+	HTTPSecretURL string `json:"HTTPSecretURL"`
+	UniqName      string `json:"UniqName"`
+	WebhookURL    string `json:"WebhookURL"`
+	ConnectType   string `json:"ConnectType"`
+	SleepTime     int    `json:"SleepTime"`
 }
 
 type CMD struct {

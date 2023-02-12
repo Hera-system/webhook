@@ -33,18 +33,18 @@ func Native(dataStruct vars.CMD) string {
 				tmp := "Failed to kill process. "
 				log.Error.Println(tmp, err)
 				utils.SendResult(tmp, dataStruct, true, "", "")
-				return (tmp)
+				return tmp
 			}
 			tmp := "Process killed as timeout reached"
 			log.Warn.Println(tmp)
 			utils.SendResult(tmp, dataStruct, true, "", "")
-			return (tmp)
+			return tmp
 		case err := <-done:
 			if err != nil {
 				log.Error.Println("Process finished with error = ", err)
 				log.Error.Println("ID - ", dataStruct.ID)
 				utils.SendResult("Error, check args and logs.", dataStruct, true, "", err.Error())
-				return ("Error, check args and logs. Error message: " + err.Error())
+				return "Error, check args and logs. Error message: " + err.Error()
 			}
 			log.Info.Println("Process finished successfully")
 		}
